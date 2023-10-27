@@ -246,7 +246,7 @@ window.FarmGod.Translation = (function() {
       options : {
         title : 'FarmGod Opties',
         warning : '<b>Waarschuwingen:</b><br>- Zorg dat A is ingesteld als je standaard microfarm en B als een grotere microfarm<br>- Zorg dat de farm filters correct zijn ingesteld voor je het script gebruikt',
-        filterImage : 'https://higamy.github.io/TW/Scripts/Assets/farmGodFilters.png',
+        filterImage : 'https://swtools.be/FarmGod/images/filterImage_int.png',
         group : 'Uit welke groep moet er gefarmd worden:',
         distance : 'Maximaal aantal velden dat farms mogen lopen:',
         time : 'Hoe veel tijd in minuten moet er tussen farms zitten:',
@@ -274,7 +274,7 @@ window.FarmGod.Translation = (function() {
       options : {
         title : 'FarmGod Options',
         warning : '<b>Warning:</b><br>- Make sure A is set as your default microfarm and B as a larger microfarm<br>- Make sure the farm filters are set correctly before using the script',
-        filterImage : 'https://higamy.github.io/TW/Scripts/Assets/farmGodFilters.png',
+        filterImage : 'https://swtools.be/FarmGod/images/filterImage_int.png',
         group : 'Send farms from group:',
         distance : 'Maximum fields for farms:',
         time : 'How much time in minutes should there be between farms:',
