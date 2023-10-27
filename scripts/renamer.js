@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 if (window.location.href.includes('screen=overview_villages')) {
-  const $html = `<h3 align="center">Renamer</h3><br>
+  const $html = `<h3 align="center">Renamer</h3><br><br>
     <div><table><tbody><tr><td><input id="firstbox" type="checkbox"></td><td><input id="start" type="text" placeholder="1" size="1"></td><td><input id="end" type="text" placeholder="3" size="1"></td></tr></tbody></table></div>
     <div><table><tbody><tr><td><input id="secondbox" type="checkbox"></td><td><input id="textname" type="text" placeholder="Your text" maxlength="32"></td></tr></tbody></table></div>  
     <div style="padding-top: 4px;"><table><tbody><tr><td><input id="rename" type="button" class="btn" value="Rename"></td><td><input id="save" type="button" class="btn" value="Save"></td></tr></tbody></table></div>
