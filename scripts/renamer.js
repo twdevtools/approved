@@ -72,8 +72,8 @@ if (window.location.href.includes('screen=overview_villages')) {
 
 		Dialog.close();
 
-		for (let i = 0; i < t; i++) {
-			setTimeout(function () {
+		async function startRename() {
+			for (let i = 0; i < t; i++) {
 				$('.rename-icon')[i].click();
 				$('.vis input[type="text"]')
 					.first()
@@ -86,7 +86,8 @@ if (window.location.href.includes('screen=overview_villages')) {
 					);
 				$('input[type="button"]').click();
 				UI.SuccessMessage(' Success: ' + (i + 1) + '/' + t);
-			}, i * 200);
-		}
+				await new Promise((resolve) => setTimeout(resolve, 200));
+			}
+		}; startRename();
 	});
 } else UI.InfoMessage('This script is intended for use in general views.');
