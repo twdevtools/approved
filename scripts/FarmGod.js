@@ -392,7 +392,6 @@ window.FarmGod.Main = (function(Library, Translation) {
     return $.when(buildGroupSelect(options.optionGroup)).then((groupSelect) => {
       return `<style>#popup_box_FarmGod{text-align:center;width:550px;}</style>
                 <h3>${t.options.title}</h3><br><div class="optionsContent">
-                ${(checkboxError || templateError) ? `<div class="info_box" style="line-height: 15px;font-size:10px;text-align:left;"><p style="margin:0px 5px;">${t.options.warning}<br><img src="${t.options.filterImage}" style="width:100%;"></p></div><br>` : ``}
                 <div style="width:90%;margin:auto;background: url(\'graphic/index/main_bg.jpg\') 100% 0% #E3D5B3;border: 1px solid #7D510F;border-collapse: separate !important;border-spacing: 0px !important;"><table class="vis" style="width:100%;text-align:left;font-size:11px;">
                   <tr><td>${t.options.group}</td><td>${groupSelect}</td></tr>
                   <tr><td>${t.options.distance}</td><td><input type="text" size="5" class="optionDistance" value="${options.optionDistance}"></td></tr>
