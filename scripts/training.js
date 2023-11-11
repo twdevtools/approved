@@ -1,9 +1,9 @@
 /*
  * Script Name: KNIGHT TRAINING
  * Version: v1
- * Last Updated: 2023-11-10
+ * Last Updated: 2023-11-11
  * Author: K I N G S
- * Author Contact: 48-98824-2773
+ * Author Contact: +55 48-98824-2773
  */
 
 /*--------------------------------------------------------------------------------------
@@ -12,32 +12,30 @@
 
 if (window.location.href.includes('statue&mode=overview')) {
 	const $html = `<h3 align="center">Knight Training</h3>
-	<div>
-		<div class="info_box">
-			<div class="content">Choose training option:</div>
-		</div>
-		<table width="100%">
-			<tbody>
-				<tr>
-					<th style="text-align: center">(1)<br>
-						<input type="radio" name="train-knights" value="0"> 
-					</th>
-					<th style="text-align: center">(2)<br>
-						<input type="radio" name="train-knights" value="1"> 
-					</th>
-					<th style="text-align: center">(3)<br>
-						<input type="radio" name="train-knights" value="2"> 
-					</th>
-					<th style="text-align: center">(4)<br>
-						<input type="radio" name="train-knights" value="3"> 
-					</th>
-					<th style="text-align: center">(5)<br>
-						<input type="radio" name="train-knights" value="4"> 
-					</th>
-				</tr>
-			</tbody>
-		</table>
+	<div class="info_box">
+		<div class="content">Choose training option:</div>
 	</div>
+	<table width="100%">
+		<tbody>
+			<tr>
+				<th style="text-align: center">(1)<br>
+					<input type="radio" name="train-knights" value="0"> 
+				</th>
+				<th style="text-align: center">(2)<br>
+					<input type="radio" name="train-knights" value="1"> 
+				</th>
+				<th style="text-align: center">(3)<br>
+					<input type="radio" name="train-knights" value="2"> 
+				</th>
+				<th style="text-align: center">(4)<br>
+					<input type="radio" name="train-knights" value="3"> 
+				</th>
+				<th style="text-align: center">(5)<br>
+					<input type="radio" name="train-knights" value="4"> 
+				</th>
+			</tr>
+		</tbody>
+	</table>
 	<div style="padding-top: 4px">
 		<input type="button" class="btn" value="Start">
 		<input type="button" class="btn" value="Save">
@@ -49,22 +47,22 @@ if (window.location.href.includes('statue&mode=overview')) {
 		</strong>
 	</small>`;
 
-	Dialog.show('Knights', $html);
+	Dialog.show('Knight', $html);
 	let val = Number(localStorage.getItem('Statue'));
 
-	val || val === 0
-		? $(`input[value="${val}"]`).prop('checked', true)
-	: (val = 0);
+	if (val === undefined) val = 0;
+
+	$(`input[value="${val}"]`).prop('checked', true);
 
 	$('input[value="Save"]').on('click', function () {
 		localStorage.setItem('Statue', $('input[type="radio"]:checked').val());
-		val = Number(localStorage.getItem('Statue'));
-		UI.SuccessMessage(
+		val = Number(localStorage.getItem('Statue')); UI.SuccessMessage(
 			'The settings have been saved successfully.'
 		);
 	});
 
-	$('input[value="Start"]').on('click', function () {
+	$('input[value="Start"]').on('click', function (e) {
+		e.preventDefault();
 		Dialog.close();
 		Object.keys(BuildingStatue.knights).forEach((i, el) => {
 			setTimeout(function () {
