@@ -1,11 +1,11 @@
 /*
  * Script Name: RENAME VILLAGES
  * Version: v1.2
- * Last Updated: 2023-11-04
+ * Last Updated: 2023-11-11
  * Author: K I N G S
  * Author Contact: +55 48-98824-2773
  * Approved Date: 2023-10-25
-*/
+ */
 
 /*--------------------------------------------------------------------------------------
  * This script can NOT be cloned and modified without permission from the script author.
@@ -59,7 +59,7 @@ if (window.location.href.includes('screen=overview_villages')) {
 		UI.SuccessMessage('The settings have been saved successfully.');
 	});
 
-	$('#rename').on('click', () => {
+	$('#rename').on('click', function () {
 		let n, e;
 
 		if ($('#firstbox').prop('checked')) {
@@ -68,7 +68,7 @@ if (window.location.href.includes('screen=overview_villages')) {
 		}
 
 		const a = $('#secondbox').prop('checked') ? $('#textname').val() : '';
-		const t = $('.vis tr[class*="row"]').length;
+		const t = Number(game_data.player.villages);
 
 		Dialog.close();
 
@@ -76,15 +76,14 @@ if (window.location.href.includes('screen=overview_villages')) {
 			setTimeout(function () {
 				$('.rename-icon')[i].click();
 				$('.vis input[type="text"]').val(
-					`${
-						n && e !== undefined
-							? String(n + i).padStart(e, '0')
-							: ''
-					} ${a}`
+					`${n && e !== undefined ? String(n + i).padStart(e, '0') : ''} ${a}`
 				);
 				$('input[type="button"]').click();
 				UI.SuccessMessage(' Success: ' + (i + 1) + '/' + t);
 			}, i * 200);
 		}
 	});
-} else UI.InfoMessage('This script is intended for use in general views.');
+} else
+	UI.InfoMessage('Redirecting...'),
+		(window.location.href =
+			game_data.link_base_pure + 'overview_villages&mode=combined');
