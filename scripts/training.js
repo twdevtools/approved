@@ -18,27 +18,41 @@ if (window.location.href.includes('statue&mode=overview')) {
 	<table width="100%">
 		<tbody>
 			<tr>
-				<th style="text-align: center">(1)<br>
-					<input type="radio" name="train-knights" value="0"> 
-				</th>
-				<th style="text-align: center">(2)<br>
-					<input type="radio" name="train-knights" value="1"> 
-				</th>
-				<th style="text-align: center">(3)<br>
-					<input type="radio" name="train-knights" value="2"> 
-				</th>
-				<th style="text-align: center">(4)<br>
-					<input type="radio" name="train-knights" value="3"> 
-				</th>
-				<th style="text-align: center">(5)<br>
-					<input type="radio" name="train-knights" value="4"> 
-				</th>
+				<td>
+					<div class="time">
+						<input type="radio" name="train-knights" value="0"><span style="margin-bottom: 1px" class="icon header time"></span>3:20:00
+					</div>
+				</td>
+				<td>
+					<div class="time">
+						<input type="radio" name="train-knights" value="1"><span style="margin-bottom: 1px" class="icon header time"></span>6:40:00
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div class="time">
+						<input type="radio" name="train-knights" value="2"><span style="margin-bottom: 1px" class="icon header time"></span>13:20:00
+					</div>
+				</td>
+				<td>
+					<div class="time">
+						<input type="radio" name="train-knights" value="3"><span style="margin-bottom: 1px" class="icon header time"></span>20:00:00
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div class="time">
+						<input type="radio" name="train-knights" value="4"><span style="margin-bottom: 1px" class="icon header time"></span>40:00:00
+					</div>
+				</td>
 			</tr>
 		</tbody>
 	</table>
 	<div style="padding-top: 4px">
-		<input type="button" class="btn" value="Start">
-		<input type="button" class="btn" value="Save">
+		<input type="button" id="start" class="btn" value="Start Training">
+		<input type="button" id="save" class="btn" value="Save Options">
 	</div>
 	<br>
 	<small>
@@ -54,14 +68,14 @@ if (window.location.href.includes('statue&mode=overview')) {
 
 	$(`input[value="${val}"]`).prop('checked', true);
 
-	$('input[value="Save"]').on('click', function () {
+	$('#save').on('click', function () {
 		localStorage.setItem('Statue', $('input[type="radio"]:checked').val());
 		val = Number(localStorage.getItem('Statue')); UI.SuccessMessage(
 			'The settings have been saved successfully.'
 		);
 	});
 
-	$('input[value="Start"]').on('click', function (e) {
+	$('#start').on('click', function (e) {
 		e.preventDefault();
 		Dialog.close();
 		Object.keys(BuildingStatue.knights).forEach((i, el) => {
