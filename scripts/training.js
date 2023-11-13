@@ -41,9 +41,7 @@ if (window.location.href.includes('statue&mode=overview')) {
                     </div>
                 </td>`;
 
-       		if (el === 4) {
-            	$html += '</tr>';
-        	}
+       		if (el === 4) $html += '</tr>';
     	}
 	});
 
