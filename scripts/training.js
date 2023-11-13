@@ -10,7 +10,7 @@
  * This script can NOT be cloned and modified without permission from the script author.
  --------------------------------------------------------------------------------------*/
 
-if (window.location.href.includes('statue&mode=overview')) {
+ if (window.location.href.includes('statue&mode=overview')) {
 	let $html = `<h3 align="center">Knight Training</h3>
     <div class="info_box">
         <div class="content">Choose training option:</div>
@@ -41,7 +41,7 @@ if (window.location.href.includes('statue&mode=overview')) {
                     </div>
                 </td>`;
 
-       		if (el === 4) $html += '</tr>';
+       		if (el % 2 !== 0 || el === 4) $html += '</tr>';
     	}
 	});
 
