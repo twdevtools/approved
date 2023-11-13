@@ -16,7 +16,6 @@ if (window.location.href.includes('screen=overview_villages')) {
 	<div>
 		<div class="info_box">
 			<div class="content" style="margin-left: 4px">
-				<b>WARNING:</b><br>
 				<b>1 -</b> Example 1, starting with 001.<br>
 				<b>2 -</b> Example 3, starting with 3 digits.
 			</div>
