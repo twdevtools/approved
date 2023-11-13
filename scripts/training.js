@@ -1,6 +1,6 @@
 /*
  * Script Name: KNIGHT TRAINING
- * Version: v1
+ * Version: v1.1
  * Last Updated: 2023-11-13
  * Author: K I N G S
  * Author Contact: +55 48-98824-2773
@@ -57,7 +57,7 @@ if (window.location.href.includes('statue&mode=overview')) {
     <br>
     <small>
         <strong>
-            Knight Training v1 by<span style="color: red"> K I N G S </span>
+            Knight Training v1.1 by<span style="color: red"> K I N G S </span>
         </strong>
     </small>`;
 
