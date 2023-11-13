@@ -26,7 +26,7 @@ if (window.location.href.includes('screen=overview_villages')) {
 	</div>
 	<div>
 		<input id="secondbox" type="checkbox">
-		<input id="textname" type="text" placeholder="Your text here" maxlength="32">
+		<input id="textname" type="text" style="padding-top: 4px" placeholder="Your text here" maxlength="32">
 	</div>
 	<div style="padding-top: 8px;">
 		<input id="rename" type="button" class="btn" value="Rename Villages">
