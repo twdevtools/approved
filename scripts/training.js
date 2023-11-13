@@ -1,7 +1,7 @@
 /*
  * Script Name: KNIGHT TRAINING
  * Version: v1
- * Last Updated: 2023-11-11
+ * Last Updated: 2023-11-13
  * Author: K I N G S
  * Author Contact: +55 48-98824-2773
  */
@@ -64,19 +64,18 @@ if (window.location.href.includes('statue&mode=overview')) {
 	Dialog.show('Knight', $html);
 	let val = Number(localStorage.getItem('Statue'));
 
-	if (val === undefined) val = 0;
-
-	$(`input[value="${val}"]`).prop('checked', true);
+	$(`input[value="${val === undefined ? 0 : val}"]`).prop('checked', true);
 
 	$('#save').on('click', function () {
 		localStorage.setItem('Statue', $('input[type="radio"]:checked').val());
-		val = Number(localStorage.getItem('Statue')); UI.SuccessMessage(
+		UI.SuccessMessage(
 			'The settings have been saved successfully.'
 		);
 	});
 
 	$('#start').on('click', function (e) {
 		e.preventDefault();
+		val = Number($('input[type="radio"]:checked').val());
 		Dialog.close();
 		Object.keys(BuildingStatue.knights).forEach((i, el) => {
 			setTimeout(function () {
