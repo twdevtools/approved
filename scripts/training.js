@@ -11,57 +11,57 @@
  --------------------------------------------------------------------------------------*/
 
 if (window.location.href.includes('statue&mode=overview')) {
-	const $html = `<h3 align="center">Knight Training</h3>
-	<div class="info_box">
-		<div class="content">Choose training option:</div>
-	</div>
-	<table width="100%">
-		<tbody>
-			<tr>
-				<td>
-					<div class="time">
-						<input type="radio" name="train-knights" value="0"><span style="margin-bottom: 1px" class="icon header time"></span>3:20:00
-					</div>
-				</td>
-				<td>
-					<div class="time">
-						<input type="radio" name="train-knights" value="1"><span style="margin-bottom: 1px" class="icon header time"></span>6:40:00
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<div class="time">
-						<input type="radio" name="train-knights" value="2"><span style="margin-bottom: 1px" class="icon header time"></span>13:20:00
-					</div>
-				</td>
-				<td>
-					<div class="time">
-						<input type="radio" name="train-knights" value="3"><span style="margin-bottom: 1px" class="icon header time"></span>20:00:00
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<div class="time">
-						<input type="radio" name="train-knights" value="4"><span style="margin-bottom: 1px" class="icon header time"></span>40:00:00
-					</div>
-				</td>
-			</tr>
-		</tbody>
-	</table>
-	<div style="padding-top: 4px">
-		<input type="button" id="start" class="btn" value="Start Training">
-		<input type="button" id="save" class="btn" value="Save Options">
-	</div>
-	<br>
-	<small>
-		<strong>
-			Knight Training v1 by<span style="color: red"> K I N G S </span>
-		</strong>
-	</small>`;
+	let $html = `<h3 align="center">Knight Training</h3>
+    <div class="info_box">
+        <div class="content">Choose training option:</div>
+    </div>
+    <table width="100%">
+        <tbody>`;
 
-	Dialog.show('Knight', $html);
+	Object.keys(BuildingStatue.knights).forEach(function (i, el) {
+    	if (el <= 4) {
+        	
+			if (el % 2 === 0) $html += '<tr>';
+        	
+        	$html += `
+                <td>
+                    <div class="time">
+                        <input type="radio" name="train-knights" value="${el}">
+                        <span style="margin-bottom: 1px" class="icon header time"></span>${String(
+                            Math.floor(
+                                BuildingStatue.knights[i].usable_regimens[el].duration / 3600
+                            )
+                        ).padStart(2, '0')}:${String(
+                            Math.floor(
+                                (BuildingStatue.knights[i].usable_regimens[el].duration % 3600) / 60
+                            )
+                        ).padStart(2, '0')}:${String(
+                            Math.floor(BuildingStatue.knights[i].usable_regimens[el].duration % 60)
+                        ).padStart(2, '0')}
+                    </div>
+                </td>`;
+
+       		if (el === 4) {
+            	$html += '</tr>';
+        	}
+    	}
+	});
+
+	$html += `
+        </tbody>
+    </table>
+    <div style="padding-top: 4px">
+        <input type="button" id="start" class="btn" value="Start Training">
+        <input type="button" id="save" class="btn" value="Save Options">
+    </div>
+    <br>
+    <small>
+        <strong>
+            Knight Training v1 by<span style="color: red"> K I N G S </span>
+        </strong>
+    </small>`;
+
+	Dialog.show('Knights', $html);
 	let val = Number(localStorage.getItem('Statue'));
 
 	$(`input[value="${val === undefined ? 0 : val}"]`).prop('checked', true);
