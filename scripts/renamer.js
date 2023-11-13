@@ -24,7 +24,7 @@ if (window.location.href.includes('screen=overview_villages')) {
 		<input id="start" type="text" placeholder="1" size="1">
 		<input id="end" type="text" placeholder="3" size="1">
 	</div>
-	<div style="padding-top: 4px">
+	<div style="margin-top: 4px">
 		<input id="secondbox" type="checkbox">
 		<input id="textname" type="text" placeholder="Your text here" maxlength="32">
 	</div>
