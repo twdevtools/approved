@@ -80,19 +80,18 @@ $('#start').on('click', function (e) {
                                 Math.floor((i.n - i.s) / 2 / 3600)
                             ).padStart(2, '0')}:${String(
                                 Math.floor((((i.n - i.s) / 2) % 3600) / 60)
-                            ).padStart(2, '0')}:${String(((i.n - i.s) / 2) % 60).padStart(
-                                2,
-                                '0'
+                            ).padStart(2, '0')}:${String(Math.floor((i.n - i.s) / 2) % 60).padStart(
+                                2,'0'
                             )}
                         </div>
                     </td>
                     <td align="center">
                         <div class="time">
                             <span class="icon header time"></span>${String(
-                                Math.floor((i.n - i.t) / 3600)
+                                Math.floor((i.n - i.t) / 2 / 3600)
                             ).padStart(2, '0')}:${String(
-                                Math.floor(((i.n - i.t) % 3600) / 60)
-                            ).padStart(2, '0')}:${String((i.n - i.t) % 60).padStart(2, '0')}
+                                Math.floor((((i.n - i.t) / 2) % 3600) / 60)
+                            ).padStart(2, '0')}:${String(Math.floor((i.n - i.t) / 2) % 60).padStart(2, '0')}
                         </div>
                     </td>
                     <td align="center">
@@ -101,7 +100,6 @@ $('#start').on('click', function (e) {
                 </tr>
             </tbody>
         </table>
-    </div>
-    `
+    </div>`
 	);
 });
