@@ -40,7 +40,7 @@ const $html = `<h3 align="center">Calculator</h3>
         </tr>
     </tbody>
 </table>
-<div style="margin-top: 4px">
+<div style="margin-top: 4px; margin-bottom: 4px">
     <input type="button" id="start" class="btn" value="Calculate Times">
 </div>
 `;
@@ -65,22 +65,43 @@ $('#start').on('click', function (e) {
 	};
 
 	$('.popup_box_content').append(
-		`<div style="margin-top: 4px">
-        <table width="100%"><tbody><tr><th>Cancel at:</th>
-        <th>Arrives at:</th><th>Copy:</th></tr>
-        <tr><td><div class="time"><span class="icon header time"></span>${String(
-			Math.floor((i.n - i.s) / 2 / 3600)
-		).padStart(2, '0')}:${String(
-			Math.floor((((i.n - i.s) / 2) % 3600) / 60)
-		).padStart(2, '0')}:${String(((i.n - i.s) / 2) % 60).padStart(
-			2,
-			'0'
-		)}</div>
-        </td><td><div class="time"><span class="icon header time"></span>${String(
-			Math.floor((i.n - i.t) / 3600)
-		).padStart(2, '0')}:${String(
-			Math.floor(((i.n - i.t) % 3600) / 60)
-		).padStart(2, '0')}:${String((i.n - i.t) % 60).padStart(2, '0')}</div>
-        </td><td><input type="button" class="btn" value="Copy"></td></tr></tbody></table></div>`
+	`<div>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <th style="text-align: center">Cancel at:</th>
+                    <th style="text-align: center">Arrives at:</th>
+                    <th style="text-align: center">Copy:</th>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <div class="time">
+                            <span class="icon header time"></span>${String(
+                                Math.floor((i.n - i.s) / 2 / 3600)
+                            ).padStart(2, '0')}:${String(
+                                Math.floor((((i.n - i.s) / 2) % 3600) / 60)
+                            ).padStart(2, '0')}:${String(((i.n - i.s) / 2) % 60).padStart(
+                                2,
+                                '0'
+                            )}
+                        </div>
+                    </td>
+                    <td align="center">
+                        <div class="time">
+                            <span class="icon header time"></span>${String(
+                                Math.floor((i.n - i.t) / 3600)
+                            ).padStart(2, '0')}:${String(
+                                Math.floor(((i.n - i.t) % 3600) / 60)
+                            ).padStart(2, '0')}:${String((i.n - i.t) % 60).padStart(2, '0')}
+                        </div>
+                    </td>
+                    <td align="center">
+                        <input type="button" class="btn" value="Copy">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    `
 	);
 });
