@@ -18,32 +18,31 @@
     <table width="100%">
         <tbody>`;
 
-	Object.keys(BuildingStatue.knights).forEach(function (i, el) {
-    	if (el <= 4) {
-        	
-			if (el % 2 === 0) $html += '<tr>';
+		BuildingStatue.knights[Object.keys(BuildingStatue.knights)[0]].usable_regimens.forEach(function (el, i) {
+    	      	
+			if (i % 2 === 0) $html += '<tr>';
         	
         	$html += `
                 <td>
                     <div class="time">
-                        <input type="radio" name="train-knights" value="${el}">
+                        <input type="radio" name="train-knights" value="${i}">
                         <span style="margin-bottom: 1px" class="icon header time"></span>${String(
                             Math.floor(
-                                BuildingStatue.knights[i].usable_regimens[el].duration / 3600
+                                el.duration / 3600
                             )
                         ).padStart(2, '0')}:${String(
                             Math.floor(
-                                (BuildingStatue.knights[i].usable_regimens[el].duration % 3600) / 60
+                                (el.duration % 3600) / 60
                             )
                         ).padStart(2, '0')}:${String(
-                            Math.floor(BuildingStatue.knights[i].usable_regimens[el].duration % 60)
+                            Math.floor(el.duration % 60)
                         ).padStart(2, '0')}
                     </div>
                 </td>`;
 
-       		if (el % 2 !== 0 || el === 4) $html += '</tr>';
+       		if (i % 2 !== 0 || i === 4) $html += '</tr>';
     	}
-	});
+	);
 
 	$html += `
         </tbody>
