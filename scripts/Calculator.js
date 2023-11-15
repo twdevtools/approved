@@ -64,14 +64,14 @@ $('#start').on('click', function (e) {
 		t: i[6] * 3600 + i[7] * 60 + i[8],
 	};
 
-	$('.popup_box_content').append(
+$('.popup_box_content').append(
 	`<div>
         <table width="100%">
             <tbody>
                 <tr>
+                    <th style="text-align: center">Cancel:</th>
                     <th style="text-align: center">Cancel at:</th>
-                    <th style="text-align: center">Arrives at:</th>
-                    <th style="text-align: center">Copy:</th>
+                    <th style="text-align: center">Export:</th>
                 </tr>
                 <tr>
                     <td align="center">
@@ -80,9 +80,9 @@ $('#start').on('click', function (e) {
                                 Math.floor((i.n - i.s) / 2 / 3600)
                             ).padStart(2, '0')}:${String(
                                 Math.floor((((i.n - i.s) / 2) % 3600) / 60)
-                            ).padStart(2, '0')}:${String(Math.floor((i.n - i.s) / 2) % 60).padStart(
-                                2,'0'
-                            )}
+                            ).padStart(2, '0')}:${String(
+                                Math.floor((i.n - i.s) / 2) % 60
+                            ).padStart(2, '0')}
                         </div>
                     </td>
                     <td align="center">
@@ -91,11 +91,13 @@ $('#start').on('click', function (e) {
                                 Math.floor((i.n - i.t) / 2 / 3600)
                             ).padStart(2, '0')}:${String(
                                 Math.floor((((i.n - i.t) / 2) % 3600) / 60)
-                            ).padStart(2, '0')}:${String(Math.floor((i.n - i.t) / 2) % 60).padStart(2, '0')}
+                            ).padStart(2, '0')}:${String(
+                                Math.floor((i.n - i.t) / 2) % 60
+                            ).padStart(2, '0')}
                         </div>
                     </td>
-                    <td align="center">
-                        <input type="button" class="btn" value="Copy">
+                    <td style="text-align: center; padding: 2px">
+                        <input type="button" class="btn" value="Export">
                     </td>
                 </tr>
             </tbody>
