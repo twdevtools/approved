@@ -35,14 +35,11 @@ calculateTimes: function (_0x5491bd, _0x3359b3, _0xb74308, _0xb75309) {
     const _0x44325f = new Date(this.convertToValidFormat(_0x5491bd + ' ' + _0xb74308));
     const _0x370c73 = (_0x4db34b - _0x44325f) / 0x2;
     const _0x572c71 = this.formatMilliseconds(_0xb75309);
-    return _0x370c73 > 0x0 && _0x572c71 && {
-        'timer': '<span class="timer" style="color: red">' + this.formatSeconds(_0x370c73 / 0x3e8) + '</span>',
-        'cancel': '<span style="color: #229b22">' + this.formatSeconds((_0x572c71 - _0x370c73) / 0x3e8) + '</span>'
-    };
+    return _0x370c73 > 0x0 && _0x572c71 && {timer: '<span class="timer" style="color: red">' + this.formatSeconds(_0x370c73 / 0x3e8) + '</span>', cancel: '<span style="color: #229b22">' + this.formatSeconds((_0x572c71 - _0x370c73) / 0x3e8) + '</span>'};
 },
 extractTime: function (_0x3a1a28) {
     const _0x30c9f0 = $(_0x3a1a28)['closest']('div')['find']('span')['prop']('textContent');
-    return navigator.clipboard.writeText('🟢 CANCEL IN: ' + _0x30c9f0 + ' 🟢');
+    return navigator.clipboard.writeText('🟢 CANCEL IN: ' + _0x30c9f0 + ' 🟢'), UI['SuccessMessage']('Copied time!');
 },
 initCalculate: function () {
     const _0x5aa236 = $('#serverDate')['prop']('textContent');
@@ -50,9 +47,7 @@ initCalculate: function () {
     const _0x271354 = $('.exit')['prop']('value');
     const _0x291351 = $('.duration')['prop']('value');
     const _0x2538c8 = this.calculateTimes(_0x5aa236, _0x191068, _0x271354, _0x291351);
-    return _0x2538c8 ? ($('.vis.moveable.cancel')['append']('<div><table width="100%"><tbody><tr><th><strong>NOBLE ARRIVING:</strong></th><th><strong>COMMAND SENT:</strong></th><th><strong>CANCEL TIME:</strong></th><th><strong>CANCEL AT:</strong></th><th style="text-align: center"><strong>SEND:</strong></th></tr><tr><td style="text-align: center; font-size: larger"><strong>' + _0x191068 + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + _0x271354 + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + _0x2538c8['cancel'] + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + _0x2538c8['timer'] + '</strong></td><td class="align_right"><input type="button" class="btn" style="margin: 4px" onclick="content.extractTime(this)" value="COPY"></td></tr></tbody></table></div>'), Timing['tickHandlers']['timers']['init'](), Timing['tickHandlers']['timers']['handleTimerEnd'] = function(_0x275089) { 
-        this.closest('div').remove();
-    }) : UI['ErrorMessage']('No matches found');
+    return _0x2538c8 ? ($('.vis.moveable.cancel')['append']('<div><table width="100%"><tbody><tr><th><strong>NOBLE ARRIVING:</strong></th><th><strong>COMMAND SENT:</strong></th><th><strong>CANCEL TIME:</strong></th><th><strong>CANCEL AT:</strong></th><th style="text-align: center"><strong>SEND:</strong></th></tr><tr><td style="text-align: center; font-size: larger"><strong>' + _0x191068 + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + _0x271354 + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + _0x2538c8['cancel'] + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + _0x2538c8['timer'] + '</strong></td><td class="align_right"><input type="button" class="btn" style="margin: 4px" onclick="content.extractTime(this)" value="COPY"></td></tr></tbody></table></div>'), Timing['tickHandlers']['timers']['init'](), Timing['tickHandlers']['timers']['handleTimerEnd'] = function(_0x275089) { this.closest('div').remove(); }) : UI['ErrorMessage']('No matches found');
 }};
 $(window['TribalWars'])['on']('global_tick', function (_0xfb67b4) {
     _0xfb67b4 = $('#main_layout > tbody > tr.shadedBG > td.maincell > div.vis.moveable.cancel > div:nth-child(3) > table > tbody > tr > td:nth-child(4) > strong > span'), _0xfb67b4['prop']('textContent') === '0:00:10' && TribalWars['playSound']('chat');
