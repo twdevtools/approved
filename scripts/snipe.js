@@ -56,6 +56,6 @@ window.content = {
     },
 };
 $(window.TribalWars).on('global_tick', function (event) {
-    event = $('#main_layout > tbody > tr.shadedBG > td.maincell > div.vis.moveable.cancel.content-border > div:nth-child(3) > table > tbody > tr > td:nth-child(4) > strong > span'), event.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
+    event = $('#ds_body > div.vis.moveable.cancel.content-border.ui-draggable.ui-draggable-handle > div:nth-child(3) > table > tbody > tr:nth-child(2) > td:nth-child(4) > strong > span'), event.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
 });
 $('.vis.moveable.cancel.content-border').on('input', content.saveAction);
