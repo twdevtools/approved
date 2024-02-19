@@ -165,7 +165,7 @@ var stringHTML =
         </table>
     </div>
     <div class="action-content">
-        <input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="TribalWarsFunctions.initCalculate(this)" value="CALCULATE TIMES">
+        <input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="functions.initCalculate(this)" value="CALCULATE TIMES">
         <input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="" value="EXPORT BB CODE">
     </div>
 </div>`
@@ -174,7 +174,7 @@ $(stringHTML).appendTo(document.body).draggable();
 
 / SCRIPT FUNCTIONS CONTENT /
 
-TribalWarsFunctions = {
+functions = {
 	calculateTimes: function (landingTime, currentTime, sigil, coord, target, unit) {
 		var distance = this.calculateDistance(coord, target);
 		var sigilRatio = 1 + Number(sigil) / 100;
@@ -236,7 +236,7 @@ TribalWarsFunctions = {
                 [spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob] = realUnits.map(Number),
 
                 document.querySelector('.targets').value.split(' ').forEach(target => {
-                  (launchTime = TribalWarsFunctions.calculateTimes(landingTime, currentTime, sigil, coord, target, unitsSpeed[unitSelected])) && realCombinations.push({
+                  (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, unitsSpeed[unitSelected])) && realCombinations.push({
                     'coord': coord,
                     'target': target, 
                     'spear': spear, 
@@ -343,25 +343,143 @@ TribalWarsFunctions = {
                                 </thead>
                                 <tbody>`];
 
-                                realCombinations.forEach((el, i) => stringHTML.push(`
-                                <tr>
-                                    <td>` + Number(i+1) + `</td>
-                                    <td>` + el.coord + `</td>
-                                    <td>` + el.target + `</td>
-                                    <td class="unit-item ` + (el.spear ? '' : 'hidden') + `" style="` + (el.spear ? 'background: #C3FFA5' : '') + `">` + el.spear + `</td>
-                                    <td class="unit-item ` + (el.sword ? '' : 'hidden') + `" style="` + (el.sword ? 'background: #C3FFA5' : '') + `">` + el.sword + `</td>
-                                    <td class="unit-item ` + (el.axe ? '' : 'hidden') + `" style="` + (el.axe ? 'background: #C3FFA5' : '') + `">` + el.axe + `</td>
-                                    <td class="unit-item ` + (el.spy ? '' : 'hidden') + `" style="` + (el.spy ? 'background: #C3FFA5' : '') + `">` + el.spy + `</td>
-                                    <td class="unit-item ` + (el.light ? '' : 'hidden') + `" style="` + (el.light ? 'background: #C3FFA5' : '') + `">` + el.light + `</td>
-                                    <td class="unit-item ` + (el.heavy ? '' : 'hidden') + `" style="` + (el.heavy ? 'background: #C3FFA5' : '') + `">` + el.heavy + `</td>
-                                    <td class="unit-item ` + (el.ram ? '' : 'hidden') + `" style="` + (el.ram ? 'background: #C3FFA5' : '') + `">` + el.ram + `</td>
-                                    <td class="unit-item ` + (el.catapult ? '' : 'hidden') + `" style="` + (el.catapult ? 'background: #C3FFA5' : '') + `">` + el.catapult + `</td>
-                                    <td class="unit-item ` + (el.knight ? '' : 'hidden') + `" style="` + (el.knight ? 'background: #C3FFA5' : '') + `">` + el.knight + `</td>
-                                    <td class="unit-item ` + (el.snob ? '' : 'hidden') + `" style="` + (el.snob ? 'background: #C3FFA5' : '') + `">` + el.snob + `</td>
-                                    <td>` + this.formatDateTime(el.launchTime) + `</td>
-                                    <td><span class="timer">` + this.formatSeconds((el.launchTime - currentTime) / 1000) + `</span</td>
+                                const content = {
+                                    spear: {
+                                      0: true,
+                                      1: false,
+                                      2: true,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    sword: {
+                                      0: true,
+                                      1: true,
+                                      2: true,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    axe: {
+                                      0: true,
+                                      1: false,
+                                      2: true,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    spy: {
+                                      0: false,
+                                      1: false,
+                                      2: false,
+                                      3: true,
+                                      4: false,
+                                      5: false,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    light: {
+                                      0: false,
+                                      1: false,
+                                      2: false,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    heavy: {
+                                      0: false,
+                                      1: false,
+                                      2: false,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    ram: {
+                                      0: true,
+                                      1: true,
+                                      2: true,
+                                      3: true,
+                                      4: true,
+                                      5: false,
+                                      6: true,
+                                      7: true,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    catapult: {
+                                      0: true,
+                                      1: true,
+                                      2: true,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: true,
+                                      7: true,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    knight: {
+                                      0: false,
+                                      1: false,
+                                      2: false,
+                                      3: true,
+                                      4: false,
+                                      5: false,
+                                      6: false,
+                                      7: false,
+                                      8: true,
+                                      9: false,
+                                    },
+                                    snob: {
+                                      0: true,
+                                      1: true,
+                                      2: true,
+                                      3: true,
+                                      4: true,
+                                      5: true,
+                                      6: true,
+                                      7: true,
+                                      8: true,
+                                      9: true,
+                                    },
+                                  };
+
+                                realCombinations.forEach((combinations, index) => {
+                                    stringHTML.push(`<tr>
+                                    <td>` + Number(index+1) + `</td>
+                                    <td>` + combinations.coord + `</td>
+                                    <td>` + combinations.target + `</td>`);
+                                    const extractUnits = [combinations.spear, combinations.sword, combinations.axe, combinations.spy, combinations.light, 
+                                    combinations.heavy, combinations.ram, combinations.catapult, 
+                                    combinations.knight, combinations.snob]; extractUnits.forEach((el, i) => {
+                                        stringHTML.push(`<td class="unit-item ` + (el && content[unitSelected][i] ? '' : 'hidden') + `" style="` + (el && content[unitSelected][i] ? 'background: #C3FFA5' : '') + `">` + el + `</td>`)
+                                    })
+                                    stringHTML.push(`<td>` + this.formatDateTime(combinations.launchTime) + `</td>
+                                    <td><span class="timer">` + this.formatSeconds((combinations.launchTime - currentTime) / 1000) + `</span</td>
                                     <td><input type="button" class="btn" value="SEND"></td>
-                                </tr>`));
+                                    </tr>`)});                                                                                                                                                                                                                                                                                                                                                                              
                                 stringHTML.push('</tbody></table></div></div>');
                                 const stringFormatted = stringHTML.join('');
                                 jQuery('.vis.content-border').append(stringFormatted);
