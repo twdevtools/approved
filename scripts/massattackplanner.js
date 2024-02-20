@@ -90,7 +90,7 @@ functions = {
             _0x1fbc2e.sort((_0x309c70, _0x4e4ce1) => {
                 return _0x309c70.launchTime - _0x4e4ce1.launchTime;
             });
-            _0x1fbc2e = _0x1fbc2e.slice(0, 500);
+            _0x1fbc2e = _0x1fbc2e.slice(0);
             var _0x5befd9 = _0x1fbc2e.length;
             if (!_0x5befd9) {
                 UI.ErrorMessage('No possibilities found');
