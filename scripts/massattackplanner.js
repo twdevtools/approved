@@ -11,7 +11,7 @@
  --------------------------------------------------------------------------------------*/
 
 / STRING HTML CONTENT /;
-const stringHTML = '<div class="vis content-border" style="width: 789px; border-radius: 8px 8px 8px 8px; position: relative; left: 3px; top: -698px; cursor: move"><div class="content"><table width="100%"><tbody><tr><th style="text-align: center; white-space: nowrap; padding: 6px" colspan="4"><h3 style="margin: 0px">MASS ATTACK PLANNER</h3></th></tr><tr><td align="center"><strong>LANDING TIME:</strong></td><td><input type="text" class="arrival" style="font-size: 13pt" placeholder="DD/MM/AAAA 00:00:00"></td><td align="center"><strong>SIGIL:</strong></td><td><input type="text" class="sigil" style="width: 49px; font-size: 13pt" placeholder="00"></td></tr></tbody></table></div><table width="100%"><thead><tr><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th> <th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th> </tr></thead><tbody><tr><td><input type="radio" id="unit_spear" name="chosen_units" value="spear"></td> <td><input type="radio" id="unit_sword" name="chosen_units" value="sword"></td> <td><input type="radio" id="unit_axe" name="chosen_units" value="axe"></td><td><input type="radio" id="unit_spy" name="chosen_units" value="spy"></td> <td><input type="radio" id="unit_light" name="chosen_units" value="light"></td><td><input type="radio" id="unit_heavy" name="chosen_units" value="heavy"></td> <td><input type="radio" id="unit_ram" name="chosen_units" value="ram"></td><td><input type="radio" id="unit_catapult" name="chosen_units" value="catapult"></td> <td><input type="radio" id="unit_knight" name="chosen_units" value="knight"></td> <td><input type="radio" id="unit_snob" name="chosen_units" value="snob"></td> </tr></tbody></table><div class="textarea-content"><table width="100%"><thead><tr><th><label for="coordinates"><strong>YOUR VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="coordinates" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody><thead><tr><th><label for="targets"><strong>DESTINATION VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="targets" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody></table></div><div class="action-content"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="functions.initCalculate(this)" value="CALCULATE TIMES"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="" value="EXPORT BB CODE"></div><div class="commands-found"></div></div>';
+const stringHTML = '<div class="vis content-border" style="width: 789px; border-radius: 8px 8px 8px 8px; position: relative; left: 3px; top: -698px; cursor: move"><div class="content"><table width="100%"><tbody><tr><th style="text-align: center; white-space: nowrap; padding: 6px" colspan="4"><h3 style="margin: 0px">MASS ATTACK PLANNER</h3></th></tr><tr><td align="center"><strong>LANDING TIME:</strong></td><td><input type="text" class="arrival" style="font-size: 13pt" placeholder="DD/MM/AAAA 00:00:00"></td><td align="center"><strong>SIGIL:</strong></td><td><input type="text" class="sigil" style="width: 49px; font-size: 13pt" placeholder="00"></td></tr></tbody></table></div><table width="100%"><thead><tr><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th> <th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th> </tr></thead><tbody><tr><td><input type="radio" id="unit_spear" name="chosen_units" value="spear"></td> <td><input type="radio" id="unit_sword" name="chosen_units" value="sword"></td> <td><input type="radio" id="unit_axe" name="chosen_units" value="axe"></td><td><input type="radio" id="unit_spy" name="chosen_units" value="spy"></td> <td><input type="radio" id="unit_light" name="chosen_units" value="light"></td><td><input type="radio" id="unit_heavy" name="chosen_units" value="heavy"></td> <td><input type="radio" id="unit_ram" name="chosen_units" value="ram"></td><td><input type="radio" id="unit_catapult" name="chosen_units" value="catapult"></td> <td><input type="radio" id="unit_knight" name="chosen_units" value="knight"></td> <td><input type="radio" id="unit_snob" name="chosen_units" value="snob"></td> </tr></tbody></table><div class="textarea-content"><table width="100%"><thead><tr><th><label for="coordinates"><strong>YOUR VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="coordinates" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody><thead><tr><th><label for="targets"><strong>DESTINATION VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="targets" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody></table></div><div class="action-content"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="functions.initCalculate(this)" value="CALCULATE TIMES"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="functions.exportBBCode(this)" value="EXPORT BB CODE"></div><div class="commands-found"></div></div>';
 $(stringHTML).appendTo(document.body).draggable();
 / SCRIPT FUNCTIONS CONTENT /;
 const functions = {
@@ -53,6 +53,12 @@ const functions = {
         var [$Y, $T] = invalidFormat.split(' ');
         var [$D, $M, $A] = $Y.split('/');
         return $A + '-' + $M + '-' + $D + ' ' + $T;
+    },
+    exportBBCode: function(event) {
+        / INIT EXPORT BB CODE /;
+        $('.combinations-found tr').each(function(i, el) {
+            
+        });
     },
     initCalculate: function (event) {
         / INIT CALCULATE TIMES /;
@@ -100,23 +106,11 @@ const functions = {
                 UI.ErrorMessage('No possibilities found');
             } else {
                 const stringHTML = ['<label><span>' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th>#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th>Send</th></tr></thead><tbody>'];
-                const $units = ['spear', 'sword', 'axe', 'spy', 'light', 'heavy', 'ram', 'catapult', 'knight', 'snob'];
                 realCombinations.forEach((village, index) => {
                     stringHTML.push('<tr><td>' + Number(index + 1) + '</td><td>' + village.coord + '</td><td>' + village.target + '</td>');
-                    const totalUnits = [
-                        village.spear,
-                        village.sword,
-                        village.axe,
-                        village.spy,
-                        village.light,
-                        village.heavy,
-                        village.ram,
-                        village.catapult,
-                        village.knight,
-                        village.snob,
-                    ];
-                    totalUnits.forEach((unit, i) => {
-                        stringHTML.push('<td class="unit-item ' + (unit && units[value] >= units[$units[i]] ? '' : 'hidden') + '" style="' + (unit && units[value] >= units[$units[i]] ? 'background: #C3FFA5' : '') + '">' + unit + '</td>');
+                    const values = Object.keys(units);
+                    [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
+                        stringHTML.push('<td class="unit-item ' + (unit && units[value] >= units[values[i]] ? '' : 'hidden') + '" style="' + (unit && units[value] >= units[values[i]] ? 'background: #C3FFA5' : '') + '">' + unit + '</td>');
                     });
                     stringHTML.push('<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td><input type="button" class="btn" value="SEND"></td></tr>');
                 });
@@ -129,5 +123,5 @@ const functions = {
                 });
             }
         });
-    }
+    },
 };
