@@ -122,7 +122,7 @@ functions = {
                 jQuery('.vis.content-border').append(formattedHTML);
                 Timing.tickHandlers.timers.init();
                 $(window.TribalWars).on('global_tick', function (_0x53a5bb) {
-                    _0x53a5bb = $('#mass-commands-planner > div > table > tbody > tr:nth-child(2) > td:nth-child(14) > span'), _0x53a5bb.prop('textContent') === '0:00:00' ? _0x53a5bb.closest('tr').remove() : _0x53a5bb.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
+                    _0x53a5bb = $('#ds_body > div.vis.content-border.ui-draggable.ui-draggable-handle > div.commands-found > div > table > tbody > tr:nth-child(1) > td:nth-child(15) > span'), _0x53a5bb.prop('textContent') === '0:00:00' ? _0x53a5bb.closest('tr').remove() : _0x53a5bb.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
                 });
             }
         });
