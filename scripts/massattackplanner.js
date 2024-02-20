@@ -15,64 +15,66 @@ var stringHTML = '<div class="vis content-border" style="width: 789px; position:
 $(stringHTML).appendTo(document.body).draggable();
 / SCRIPT FUNCTIONS CONTENT /;
 functions = {
-    calculateTimes: function (_0x159a17, _0x1a881d, _0x443888, _0x536ac3, _0x232edf, _0x20bf64) {
-        var _0x353459 = this.calculateDistance(_0x536ac3, _0x232edf);
-        var _0x56294e = 1 + Number(_0x443888) / 0x64;
-        var _0x1ef335 = (_0x353459 * _0x20bf64 * 0xea60) / _0x56294e;
-        var _0x4ece55 = new Date(Math.round((_0x159a17 - _0x1ef335) / 1000) * 1000);
-        return _0x4ece55 > _0x1a881d && _0x353459 > 0 && _0x4ece55;
+    calculateTimes: function (landingTIme, currentTime, sigil, coord, target, unit) {
+        var distance = this.calculateDistance(coord, target);
+        var sigilRatio = 1 + Number(sigil) / 100;
+        var unitTime = (distance * unit * 60000) / sigilRatio;
+        var launchTime = new Date(Math.round((landingTIme - unitTime) / 1000) * 1000);
+        return launchTime > currentTime && distance > 0 && launchTime;
     },
-    calculateDistance: function (_0x4c556d, _0x3fb080) {
-        var [_0x4b01fe, _0x56b450] = _0x4c556d.split('|');
-        var [_0x17eee9, _0xfed66f] = _0x3fb080.split('|');
-        var _0x5eb0a9 = Math.abs(_0x4b01fe - _0x17eee9);
-        var _0x39bdb7 = Math.abs(_0x56b450 - _0xfed66f);
-        return Math.sqrt(_0x5eb0a9 * _0x5eb0a9 + _0x39bdb7 * _0x39bdb7);
+    calculateDistance: function (coord, target) {
+        var [$X1, $Y1] = coord.split('|');
+        var [$X2, $Y2] = target.split('|');
+        var $DX = Math.abs($X1 - $X2);
+        var $DY = Math.abs($Y1 - $Y2);
+        return Math.sqrt($DX * $DX + $DY * $DY);
     },
-    formatSeconds: function (_0x11afd5) {
-        var _0xa37254 = Math.floor(_0x11afd5 / 0xe10);
-        var _0x29fd94 = Math.floor(_0x11afd5 % 0xe10 / 0x3c);
-        var _0x7e26bf = Math.floor(_0x11afd5 % 0x3c);
-        return ('' + _0xa37254).padStart(2, '0') + ':' + ('' + _0x29fd94).padStart(2, '0') + ':' + ('' + _0x7e26bf).padStart(2, '0');
+    formatSeconds: function (unformattedTime) {
+        var $hours = Math.floor(unformattedTime / 3600);
+        var $minutes = Math.floor(unformattedTime % 3600 / 60);
+        var $seconds = Math.floor(unformattedTime % 60);
+        return ('' + $hours).padStart(2, '0') + ':' + ('' + $minutes).padStart(2, '0') + ':' + ('' + $seconds).padStart(2, '0');
     },
-    formatDateTime: function (_0x46d6f2) {
-        return ('' + _0x46d6f2.getDate()).padStart(2, '0') + '/' + ('' + _0x46d6f2.getMonth() + 1).padStart(2, '0') + '/' + _0x46d6f2.getFullYear() + ' ' + ('' + _0x46d6f2.getHours()).padStart(2, '0') + ':' + ('' + _0x46d6f2.getMinutes()).padStart(2, '0') + ':' + ('' + _0x46d6f2.getSeconds()).padStart(2, '0');
+    formatDateTime: function ($date) {
+        return ('' + $date.getDate()).padStart(2, '0') + '/' + ('' + ($date.getMonth() + 1)).padStart(2, '0') + '/' + $date.getFullYear() + ' ' + ('' + $date.getHours()).padStart(2, '0') + ':' + ('' + $date.getMinutes()).padStart(2, '0') + ':' + ('' + $date.getSeconds()).padStart(2, '0');
     },
-    RequestUnits: function (_0x7d04d4) {
-        return $.get('/interface.php?func=get_unit_info').then(function (_0x292612) {
-            var _0xf16c50 = {};
-            $(_0x292612).find('config').children().each(function () {
-                _0xf16c50[this.tagName] = $(this).find('speed').prop('textContent');
+    RequestUnits: function (event) {
+        return $.get('/interface.php?func=get_unit_info').then(function ($xml) {
+            var $units = {};
+            $($xml).find('config').children().each(function () {
+                $units[this.tagName] = Number(
+                    $(this).find('speed').prop('textContent')
+                );
             });
-            return _0xf16c50;
+            return $units;
         });
     },
-    convertToValidFormat: function (_0x12e0a5) {
-        var [_0x1e504e, _0x17c6d2] = _0x12e0a5.split(' ');
-        var [_0x196a3f, _0x22be3f, _0x5283bf] = _0x1e504e.split('/');
-        return _0x5283bf + '-' + _0x22be3f + '-' + _0x196a3f + ' ' + _0x17c6d2;
+    convertToValidFormat: function (invalidFormat) {
+        var [$Y, $T] = invalidFormat.split(' ');
+        var [$D, $M, $A] = $Y.split('/');
+        return $A + '-' + $M + '-' + $D + ' ' + $T;
     },
-    initCalculate: function (_0x59661) {
+    initCalculate: function (event) {
         / INIT CALCULATE TIMES /;
-        var _0x4762e9 = $('.server_info')[0].firstElementChild;
-        var _0x291be6 = new Date(this.convertToValidFormat(_0x4762e9.nextElementSibling.innerHTML + ' ' + _0x4762e9.innerHTML));
-        var _0x2d73e6 = new Date(this.convertToValidFormat(document.querySelector('.arrival').value));
-        var _0x1dfaa8 = document.querySelector('.sigil').value;
+        var unformattedTime = $('.server_info')[0].firstElementChild;
+        var currentTime = new Date(this.convertToValidFormat(unformattedTime.nextElementSibling.innerHTML + ' ' + unformattedTime.innerHTML));
+        var landingTime = new Date(this.convertToValidFormat(document.querySelector('.arrival').value));
+        var sigil = document.querySelector('.sigil').value;
         $.ajax({
             'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home',
             'method': 'GET'
-        }).then(async _0x3ceaa1 => {
-            var _0x382590 = await this.RequestUnits(), _0x5624ea = [], _0x1fbc2e = [], _0x3185e4 = {};
-            var _0x41ad6f = document.querySelector('input:checked').value;
-            document.querySelector('.coordinates').value.split(' ').forEach(_0x5ae244 => _0x3185e4[_0x5ae244] = true);
-            $(_0x3ceaa1).find('.quickedit-label').each(function (_0x4a172f) {
-                typeof _0x3185e4[coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0x0]] === 'boolean' && (
-                    $(this).closest('tr').find('.unit-item').each(function (_0x22532a) {
-                    _0x5624ea.push(this.textContent);
-                }), [spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob] = _0x5624ea.map(Number), document.querySelector('.targets').value.split(' ').forEach(_0x18dbf2 => {
-                    (launchTime = functions.calculateTimes(_0x2d73e6, _0x291be6, _0x1dfaa8, coord, _0x18dbf2, _0x382590[_0x41ad6f])) && _0x1fbc2e.push({
+        }).then(async $xml => {
+            var units = await this.RequestUnits(), realUnits = [], realCombinations = [], realCoordinates = {};
+            var value = document.querySelector('input:checked').value;
+            document.querySelector('.coordinates').value.split(' ').forEach(coord => realCoordinates[coord] = true);
+            $($xml).find('.quickedit-label').each(function (index, villages) {
+                typeof realCoordinates[coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0]] === 'boolean' && (
+                $(this).closest('tr').find('.unit-item').each(function (amount) {
+                    realUnits.push(this.textContent);
+                }), [spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob] = realUnits.map(Number), document.querySelector('.targets').value.split(' ').forEach(target => {
+                    (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && realCombinations.push({
                         'coord': coord,
-                        'target': _0x18dbf2,
+                        'target': target,
                         'spear': spear,
                         'sword': sword,
                         'axe': axe,
@@ -85,40 +87,39 @@ functions = {
                         'snob': snob,
                         'launchTime': launchTime
                     });
-                }), _0x5624ea.splice(0));
+                }), realUnits.splice(0));
             });
-            _0x1fbc2e.sort((_0x309c70, _0x4e4ce1) => {
-                return _0x309c70.launchTime - _0x4e4ce1.launchTime;
+            realCombinations.sort((a, b) => {
+                return a.launchTime - b.launchTime;
             });
-            _0x1fbc2e = _0x1fbc2e.slice(0);
-            var _0x5befd9 = _0x1fbc2e.length;
-            if (!_0x5befd9) {
+            realCombinations = realCombinations.slice(0, 500);
+            if (!realCombinations.length) {
                 UI.ErrorMessage('No possibilities found');
             } else {
-                const _0x4dede1 = ['<div class="commands-found"><label><span>' + _0x5befd9 + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th>#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th>Send</th></tr></thead><tbody>'];
-                const _0x4014f2 = ['spear', 'sword', 'axe', 'spy', 'light', 'heavy', 'ram', 'catapult', 'knight', 'snob'];
-                _0x1fbc2e.forEach((_0x3dd1c4, _0xa4ee6e) => {
-                    _0x4dede1.push('<tr><td>' + Number(_0xa4ee6e + 1) + '</td><td>' + _0x3dd1c4.coord + '</td><td>' + _0x3dd1c4.target + '</td>');
-                    const _0x4e7aa6 = [
-                        _0x3dd1c4.spear,
-                        _0x3dd1c4.sword,
-                        _0x3dd1c4.axe,
-                        _0x3dd1c4.spy,
-                        _0x3dd1c4.light,
-                        _0x3dd1c4.heavy,
-                        _0x3dd1c4.ram,
-                        _0x3dd1c4.catapult,
-                        _0x3dd1c4.knight,
-                        _0x3dd1c4.snob,
+                const stringHTML = ['<div class="commands-found"><label><span>' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th>#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th>Send</th></tr></thead><tbody>'];
+                const boolean = ['spear', 'sword', 'axe', 'spy', 'light', 'heavy', 'ram', 'catapult', 'knight', 'snob'];
+                realCombinations.forEach((village, index) => {
+                    stringHTML.push('<tr><td>' + Number(index + 1) + '</td><td>' + village.coord + '</td><td>' + village.target + '</td>');
+                    const totalUnits = [
+                        village.spear,
+                        village.sword,
+                        village.axe,
+                        village.spy,
+                        village.light,
+                        village.heavy,
+                        village.ram,
+                        village.catapult,
+                        village.knight,
+                        village.snob,
                     ];
-                    _0x4e7aa6.forEach((_0xcb2cbc, _0x3417de) => {
-                        _0x4dede1.push('<td class="unit-item ' + (_0xcb2cbc && _0x382590[_0x41ad6f] >= _0x382590[_0x4014f2[_0x3417de]] ? '' : 'hidden') + '" style="' + (_0xcb2cbc && _0x382590[_0x41ad6f] >= _0x382590[_0x4014f2[_0x3417de]] ? 'background: #C3FFA5' : '') + '">' + _0xcb2cbc + '</td>');
+                    totalUnits.forEach((unit, i) => {
+                        stringHTML.push('<td class="unit-item ' + (unit && units[value] >= units[boolean[i]] ? '' : 'hidden') + '" style="' + (unit && units[value] >= units[boolean[i]] ? 'background: #C3FFA5' : '') + '">' + unit + '</td>');
                     });
-                    _0x4dede1.push('<td>' + this.formatDateTime(_0x3dd1c4.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((_0x3dd1c4.launchTime - _0x291be6) / 1000) + '</span</td><td><input type="button" class="btn" value="SEND"></td></tr>');
+                    stringHTML.push('<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td><input type="button" class="btn" value="SEND"></td></tr>');
                 });
-                _0x4dede1.push('</tbody></table></div></div>');
-                const _0x2bc075 = _0x4dede1.join('');
-                jQuery('.vis.content-border').append(_0x2bc075);
+                stringHTML.push('</tbody></table></div></div>');
+                const formattedHTML = stringHTML.join('');
+                jQuery('.vis.content-border').append(formattedHTML);
                 Timing.tickHandlers.timers.init();
                 $(window.TribalWars).on('global_tick', function (_0x53a5bb) {
                     _0x53a5bb = $('#mass-commands-planner > div > table > tbody > tr:nth-child(2) > td:nth-child(14) > span'), _0x53a5bb.prop('textContent') === '0:00:00' ? _0x53a5bb.closest('tr').remove() : _0x53a5bb.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
