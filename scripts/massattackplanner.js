@@ -60,6 +60,9 @@ functions = {
         var currentTime = new Date(this.convertToValidFormat(unformattedTime.nextElementSibling.innerHTML + ' ' + unformattedTime.innerHTML));
         var landingTime = new Date(this.convertToValidFormat(document.querySelector('.arrival').value));
         var sigil = document.querySelector('.sigil').value;
+        document.querySelectorAll('textarea').forEach(el => /\d{1,3}\|\d{1,3}/.test(el.value) && (
+            el.value = el.value.match(/(\d{1,3}\|\d{1,3})/g).join(' ')
+        ));
         $.ajax({
             'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home',
             'method': 'GET'
