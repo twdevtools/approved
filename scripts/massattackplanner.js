@@ -84,7 +84,7 @@ const functions = {
                 $(this).closest('tr').find('.unit-item').each(function (amount) {
                     realUnits.push(this.textContent);
                 }), [spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob] = realUnits.map(Number), document.querySelector('.targets').value.split(' ').forEach(target => {
-                    (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && window.value && realCombinations.push({
+                    (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && window[value] && realCombinations.push({
                         'coord': coord,
                         'target': target,
                         'spear': spear,
