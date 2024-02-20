@@ -56,9 +56,12 @@ const functions = {
     },
     exportBBCode: function(event) {
         / INIT EXPORT BB CODE /;
-        $('.combinations-found tr').each(function(i, el) {
-            
+        var content = '[table][**]Unit[||]From[||]To[||]Launch Time[||]Send[/**]';
+        $('.commands-found tr').slice(1).each(function(i) {
+            content += '[*][unit]' + window.value + '[/unit] [|] ' + this.cells[1].textContent + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] ' + this.cells[15].textContent + '[/url]';
         });
+        content += '[/table]';
+        return navigator.clipboard.writeText(content), UI.SuccessMessage('BB Code copied!');
     },
     initCalculate: function (event) {
         / INIT CALCULATE TIMES /;
@@ -74,14 +77,14 @@ const functions = {
             'method': 'GET'
         }).then(async $xml => {
             var units = await this.RequestUnits(), realUnits = [], realCombinations = [], realCoordinates = {};
-            var value = document.querySelector('input:checked').value;
+            window.value = document.querySelector('input:checked').value;
             document.querySelector('.coordinates').value.split(' ').forEach(coord => realCoordinates[coord] = true);
             $($xml).find('.quickedit-label').each(function (index, villages) {
                 typeof realCoordinates[coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0]] === 'boolean' && (
                 $(this).closest('tr').find('.unit-item').each(function (amount) {
                     realUnits.push(this.textContent);
                 }), [spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob] = realUnits.map(Number), document.querySelector('.targets').value.split(' ').forEach(target => {
-                    (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && window[value] && realCombinations.push({
+                    (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && window.value && realCombinations.push({
                         'coord': coord,
                         'target': target,
                         'spear': spear,
@@ -103,7 +106,7 @@ const functions = {
             });
             realCombinations = realCombinations.slice(0, 500);
             if (!realCombinations.length) {
-                UI.ErrorMessage('No possibilities found');
+                UI.ErrorMessage('No possibilities found!');
             } else {
                 const stringHTML = ['<label><span>' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th>#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th>Send</th></tr></thead><tbody>'];
                 realCombinations.forEach((village, index) => {
