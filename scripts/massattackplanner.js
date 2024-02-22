@@ -80,7 +80,14 @@ const functions = {
         / INIT EXPORT BB CODE /;
         var content = '[table][**]Unit[||]From[||]To[||]Launch Time[||]Send[/**]';
         $('.commands-found tr').slice(1).each(function(i) {
-            content += '[*][unit]' + window.value + '[/unit] [|] ' + this.cells[1].textContent + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] ' + this.cells[15].textContent + '[/url]';
+            const [targetX, targetY] = this.cells[2].textContent.split('|');
+            content += '[*][unit]' + window.value + '[/unit] [|] ' + this.cells[1].textContent + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=https://' + game_data.world + '.tribalwars.com.br' + game_data.link_base_pure + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
+            ['&att_spear=', '&att_sword=', '&att_axe=', '&att_spy=', '&att_light=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
+                index <= 9 && (
+                    content += att + this.cells[index+3].textContent
+                )
+            });
+            content += ']SEND[/url]'
         });
         content += '[/table]';
         return navigator.clipboard.writeText(content), UI.SuccessMessage('BB Code copied!');
@@ -144,8 +151,8 @@ const functions = {
                     stringHTML.push('<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" onclick="functions.RequestXML(this)" value="SEND"></td></tr>');
                 });
                 stringHTML.push('</tbody></table></div>');
-                const formattedHTML = stringHTML.join('');
-                jQuery('.commands-found').html(formattedHTML);
+                const HTMLContent = stringHTML.join('');
+                jQuery('.commands-found').html(HTMLContent);
                 Timing.tickHandlers.timers.init();
                 $(window.TribalWars).on('global_tick', function (event) {
                     event = $('#ds_body > div.vis.content-border.ui-draggable.ui-draggable-handle > div.commands-found > div > table > tbody > tr:nth-child(1) > td:nth-child(15) > span'), event.prop('textContent') === '0:00:00' ? event.closest('tr').remove() : event.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
