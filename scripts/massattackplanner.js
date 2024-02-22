@@ -149,9 +149,7 @@ const functions = {
         });
     },
 };
-
 / DATABASE AND TROOPS /;
-
 (async (event) => {
     window.database = await functions.RequestData(), units = await functions.RequestUnits();
 })();
