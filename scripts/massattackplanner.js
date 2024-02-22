@@ -80,12 +80,14 @@ const functions = {
         / INIT EXPORT BB CODE /;
         var content = '[table][**]Unit[||]From[||]To[||]Launch Time[||]Send[/**]';
         $('.commands-found tr').slice(1).each(function(i) {
+            const village = this.cells[1].textContent;
             const [targetX, targetY] = this.cells[2].textContent.split('|');
-            content += '[*][unit]' + window.value + '[/unit] [|] ' + this.cells[1].textContent + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=https://' + game_data.world + '.tribalwars.com.br' + game_data.link_base_pure + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
+            content += '[*][unit]' + window.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
             ['&att_spear=', '&att_sword=', '&att_axe=', '&att_spy=', '&att_light=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
-                index <= 9 && (
-                    content += att + this.cells[index+3].textContent
-                )
+                if (index <= 9) {
+                    var cells = this.cells[index+3];
+                    content += att + (!cells.className.includes('hidden') ? cells.textContent : 0)
+                }; 
             });
             content += ']SEND[/url]'
         });
@@ -117,20 +119,7 @@ const functions = {
                     const {spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob} = realUnits; 
                     document.querySelector('.targets').value.split(' ').forEach(target => {
                         (launchTime = functions.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && realUnits[value] && realCombinations.push({
-                            'data_id': data_id, 
-                            'coord': coord,
-                            'target': target,
-                            'spear': spear,
-                            'sword': sword,
-                            'axe': axe,
-                            'spy': spy,
-                            'light': light,
-                            'heavy': heavy,
-                            'ram': ram,
-                            'catapult': catapult,
-                            'knight': knight,
-                            'snob': snob,
-                            'launchTime': launchTime
+                            'data_id': data_id, 'coord': coord, 'target': target, 'spear': spear, 'sword': sword, 'axe': axe, 'spy': spy, 'light': light, 'heavy': heavy, 'ram': ram, 'catapult': catapult, 'knight': knight, 'snob': snob, 'launchTime': launchTime,
                         });
                     }); 
                 };
