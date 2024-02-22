@@ -91,8 +91,8 @@ const functions = {
         $.ajax({
             'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home',
             'method': 'GET'
-        }).then(async $xml => {
-            var units = await this.RequestUnits(), database = await this.RequestData(), realUnits = {}, realCombinations = [], realCoordinates = {};
+        }).then($xml => {
+            var realUnits = {}, realCombinations = [], realCoordinates = {};
             window.value = document.querySelector('input:checked').value;
             document.querySelector('.coordinates').value.split(' ').forEach(coord => realCoordinates[coord] = true);
             $($xml).find('.quickedit-label').each(function (index, villages) {
@@ -148,3 +148,9 @@ const functions = {
         });
     },
 };
+
+/ DATABASE AND TROOPS /;
+
+(async (event) => {
+    window.database = await functions.RequestData(), units = await functions.RequestUnits();
+})();
