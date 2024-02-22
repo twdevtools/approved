@@ -80,9 +80,9 @@ const functions = {
         / INIT EXPORT BB CODE /;
         var content = '[table][**]Unit[||]From[||]To[||]Launch Time[||]Send[/**]';
         $('.commands-found tr').slice(1).each(function(i) {
-            const village = this.cells[1].textContent;
-            const [targetX, targetY] = this.cells[2].textContent.split('|');
-            content += '[*][unit]' + window.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
+            var village = this.cells[1].textContent;
+            var [targetX, targetY] = this.cells[2].textContent.split('|');
+            content += '[*][unit]' + value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
             ['&att_spear=', '&att_sword=', '&att_axe=', '&att_spy=', '&att_light=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
                 if (index <= 9) {
                     var cells = this.cells[index+3];
@@ -131,18 +131,16 @@ const functions = {
             if (!realCombinations.length) {
                 UI.ErrorMessage('No possibilities found!');
             } else {
-                var stringHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
+                var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
                 realCombinations.forEach((village, index) => {
-                    stringHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
+                    innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
                     [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
-                        stringHTML += '<td class="unit-item' + (unit && units[value] >= units[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && units[value] >= units[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
+                        innerHTML += '<td class="unit-item' + (unit && units[value] >= units[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && units[value] >= units[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
                     });
-                    stringHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" onclick="functions.RequestXML(this)" value="SEND"></td></tr>';
-                });
-                stringHTML += '</tbody></table></div>';
-                $('.commands-found').html(stringHTML);
-                Timing.tickHandlers.timers.init();
-                $(window.TribalWars).on('global_tick', function (event) {
+                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" onclick="functions.RequestXML(this)" value="SEND"></td></tr>';
+                }); 
+                innerHTML += '</tbody></table></div>'; document.querySelector('.commands-found').innerHTML = innerHTML;
+                Timing.tickHandlers.timers.init(); $(window.TribalWars).on('global_tick', function (event) {
                     event = $('#ds_body > div.vis.content-border.ui-draggable.ui-draggable-handle > div.commands-found > div > table > tbody > tr:nth-child(1) > td:nth-child(15) > span'), event.prop('textContent') === '0:00:00' ? event.closest('tr').remove() : event.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
                 });
             }
