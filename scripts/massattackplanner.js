@@ -137,7 +137,7 @@ const functions = {
                     [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
                         innerHTML += '<td class="unit-item' + (unit && units[value] >= units[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && units[value] >= units[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
                     });
-                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" onclick="functions.RequestXML(this)" value="SEND"></td></tr>';
+                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="functions.RequestXML(this)" value="SEND"></td></tr>';
                 }); 
                 innerHTML += '</tbody></table></div>'; document.querySelector('.commands-found').innerHTML = innerHTML;
                 Timing.tickHandlers.timers.init(); $(window.TribalWars).on('global_tick', function (event) {
