@@ -39,11 +39,8 @@ const functions = {
         return ('' + $date.getDate()).padStart(2, '0') + '/' + ('' + ($date.getMonth() + 1)).padStart(2, '0') + '/' + $date.getFullYear() + ' ' + ('' + $date.getHours()).padStart(2, '0') + ':' + ('' + $date.getMinutes()).padStart(2, '0') + ':' + ('' + $date.getSeconds()).padStart(2, '0');
     },
     RequestData: function (event) {
-        return $.ajax({
-            'url': '/map/village.txt',
-            'method': 'GET'
-        }).then($xml => {
-            const database = {};
+        return $.ajax({url: '/map/village.txt', method: 'GET'}).then($xml => {
+            var database = {};
             $xml.split('\n').forEach((lines, i) => {
                 const index = lines.split(',');
                 database[index[2] + '|' + index[3]] = index[0];
@@ -63,7 +60,15 @@ const functions = {
         });
     },
     RequestXML: function(event) {
-        
+        var village = [];
+        $(event).closest('tr').find('td').each(function(i) {
+            village.push(this.textContent);
+        });
+        window.open('/game.php?village=' + database[village[1]] + '&screen=place', '_blank').onload = function (event) {
+            this.$(':text').each(function(i) {
+                console.log(this)
+            });
+        }
     },
     convertToValidFormat: function (invalidFormat) {
         var [$Y, $T] = invalidFormat.split(' ');
@@ -131,11 +136,11 @@ const functions = {
             } else {
                 const stringHTML = ['<label><span>' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th>#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th>Send</th></tr></thead><tbody>'];
                 realCombinations.forEach((village, index) => {
-                    stringHTML.push('<tr><td>' + (index + 1) + '</td><td><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td><a href="' + game_data.link_base_pure + 'info_village&id=' + database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>');
+                    stringHTML.push('<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>');
                     [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
                         stringHTML.push('<td class="unit-item' + (unit && units[value] >= units[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && units[value] >= units[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>');
                     });
-                    stringHTML.push('<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td><input type="button" class="btn" onclick="this." value="SEND"></td></tr>');
+                    stringHTML.push('<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td><input type="button" class="btn" onclick="functions.RequestXML(this)" value="SEND"></td></tr>');
                 });
                 stringHTML.push('</tbody></table></div>');
                 const formattedHTML = stringHTML.join('');
