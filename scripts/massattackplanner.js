@@ -61,12 +61,13 @@ const functions = {
     },
     RequestXML: function(event) {
         var village = [];
-        $(event).closest('tr').find('td').each(function(i) {
-            village.push(this.textContent);
+        var HTMLCollection = event.closest('tr').cells;
+        Array.from(HTMLCollection).forEach(el => {
+            village.push(!el.className.includes('hidden') ? el.textContent : 0);
         });
         window.open('/game.php?village=' + database[village[1]] + '&screen=place', '_blank').onload = function (event) {
-            this.$(':text').each(function(i) {
-                console.log(this)
+            this.$(':text').each(function(index) {
+                index <= 9 ? this.value = village[index+3] : this.value = village[2];
             });
         }
     },
