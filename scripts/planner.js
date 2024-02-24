@@ -1,7 +1,7 @@
 /*
  * Script Name: MASS ATTACK PLANNER
  * Version: v1.0
- * Last Updated: 2024-02-23
+ * Last Updated: 2024-02-24
  * Author: K I N G S
  * Author Contact: +55 48-98824-2773
  */
@@ -38,6 +38,21 @@ window.content = {
     formatDateTime: function ($date) {
         return ('' + $date.getDate()).padStart(2, '0') + '/' + ('' + ($date.getMonth() + 1)).padStart(2, '0') + '/' + $date.getFullYear() + ' ' + ('' + $date.getHours()).padStart(2, '0') + ':' + ('' + $date.getMinutes()).padStart(2, '0') + ':' + ('' + $date.getSeconds()).padStart(2, '0');
     },
+    RequestAPI: function() {
+        return new Promise(async resolve => {
+            try {
+                window.APIUpdated = {
+                    'database': await this.RequestData(), 'units': await this.RequestUnits(),
+                };
+                UI.SuccessMessage('Database Updated!'); 
+                return resolve();
+            } catch (error) {
+                return UI.ErrorMessage(
+                    `Database has not been updated!: ${error.message}`
+                );
+            }
+        });
+    },
     RequestData: function (event) {
         return $.ajax({url: '/map/village.txt', method: 'GET'}).then($xml => {
             var database = {};
@@ -65,7 +80,7 @@ window.content = {
         Array.from(HTMLCollection).forEach(el => {
             village.push(!el.className.includes('hidden') ? el.textContent : 0);
         });
-        window.open('/game.php?village=' + database[village[1]] + '&screen=place', '_blank').onload = function (event) {
+        window.open('/game.php?village=' + window.APIUpdated.database[village[1]] + '&screen=place', '_blank').onload = function (event) {
             this.$(':text').each(function(index) {
                 index <= 9 ? this.value = village[index+3] : this.value = village[2];
             });
@@ -85,7 +100,7 @@ window.content = {
         $('.commands-found tr').slice(1).each(function(i) {
             var village = this.cells[1].textContent;
             var [targetX, targetY] = this.cells[2].textContent.split('|');
-            content += '[*][unit]' + value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
+            content += '[*][unit]' + value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
             ['&att_spear=', '&att_sword=', '&att_axe=', '&att_spy=', '&att_light=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
                 if (index <= 9) {
                     var cells = this.cells[index+3];
@@ -121,7 +136,7 @@ window.content = {
                     });
                     const {spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob} = realUnits; 
                     document.querySelector('.targets').value.split(' ').forEach(target => {
-                        (launchTime = content.calculateTimes(landingTime, currentTime, sigil, coord, target, units[value])) && realUnits[value] && realCombinations.push({
+                        (launchTime = content.calculateTimes(landingTime, currentTime, sigil, coord, target, window.APIUpdated.units[value])) && realUnits[value] && realCombinations.push({
                             'data_id': data_id, 'coord': coord, 'target': target, 'spear': spear, 'sword': sword, 'axe': axe, 'spy': spy, 'light': light, 'heavy': heavy, 'ram': ram, 'catapult': catapult, 'knight': knight, 'snob': snob, 'launchTime': launchTime,
                         });
                     }); 
@@ -136,9 +151,10 @@ window.content = {
             } else {
                 var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
                 realCombinations.forEach((village, index) => {
-                    innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
+                    var unitsSpeed = window.APIUpdated.units;
+                    innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + window.APIUpdated.database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
                     [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
-                        innerHTML += '<td class="unit-item' + (unit && units[value] >= units[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && units[value] >= units[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
+                        innerHTML += '<td class="unit-item' + (unit && unitsSpeed[value] >= unitsSpeed[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && unitsSpeed[value] >= unitsSpeed[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
                     });
                     innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="content.RequestXML(this)" value="SEND"></td></tr>';
                 }); 
@@ -150,7 +166,12 @@ window.content = {
         });
     },
 };
-/ DATABASE AND TROOPS /;
-(async (event) => {
-    window.database = await content.RequestData(), units = await content.RequestUnits();
-})();
+/ DATABASE AND UNITS LAST UPDATED /;
+var updatedTime = Date.now();
+var APIUpdated = JSON.parse(localStorage.getItem('APIUpdated'));
+(!APIUpdated || APIUpdated.updatedTime + (3600 * 1000) <= updatedTime) && window.content.RequestAPI().then(event => {
+    var contentUpdated = {
+        'updatedTime': updatedTime, 'database': this.APIUpdated.database, 'units': this.APIUpdated.units,
+    };
+    return localStorage.setItem('APIUpdated', JSON.stringify(contentUpdated))
+});
