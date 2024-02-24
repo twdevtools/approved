@@ -169,9 +169,9 @@ window.content = {
 / DATABASE AND UNITS LAST UPDATED /;
 var updatedTime = Date.now();
 var APIUpdated = JSON.parse(localStorage.getItem('APIUpdated'));
-(!APIUpdated || APIUpdated.updatedTime + (3600 * 1000) <= updatedTime) && window.content.RequestAPI().then(event => {
+(!APIUpdated || APIUpdated.lastUpdated + (3600 * 1000) <= updatedTime) && this.content.RequestAPI().then(event => {
     var contentUpdated = {
-        'updatedTime': updatedTime, 'database': this.APIUpdated.database, 'units': this.APIUpdated.units,
+        'lastUpdated': this.updatedTime, 'database': this.APIUpdated.database, 'units': this.APIUpdated.units,
     };
     return localStorage.setItem('APIUpdated', JSON.stringify(contentUpdated))
 });
