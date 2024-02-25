@@ -80,7 +80,7 @@ window.ScriptAPI = {
         });
         window.open('/game.php?village=' + window.APIUpdated.database[village[1]] + '&screen=place', '_blank').onload = function (event) {
             this.$(':text').each(function(index) {
-                index <= 9 ? this.value = village[index+3] : this.value = village[2];
+                index <= worldDataUnits.content ? this.value = village[index+3] : this.value = village[2];
             });
         }
     },
@@ -99,8 +99,8 @@ window.ScriptAPI = {
             var village = this.cells[1].textContent;
             var [targetX, targetY] = this.cells[2].textContent.split('|');
             content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
-            ['&att_spear=', '&att_sword=', '&att_axe=', '&att_spy=', '&att_light=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
-                if (index <= 9) {
+            ['&att_spear=', '&att_sword=', '&att_axe=', '&att_archer=', '&att_spy=', '&att_light=', '&att_marcher=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
+                if (index <= worldDataUnits.content) {
                     var cells = this.cells[index+3];
                     content += att + (!cells.className.includes('hidden') ? cells.textContent : 0)
                 }; 
@@ -151,12 +151,12 @@ window.ScriptAPI = {
                 UI.ErrorMessage('No possibilities found!');
             } else {
                 / CREATE DYNAMIC TABLE /;
-                var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
+                var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th>' + worldDataUnits.thead.archer + '<th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th>' + worldDataUnits.thead.marcher + '<th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
                 realCombinations.forEach((village, index) => {
                     var unitsSpeed = window.APIUpdated.units;
                     innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + window.APIUpdated.database[village.coord] + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + window.APIUpdated.database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
-                    [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
-                        innerHTML += '<td class="unit-item' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
+                    [village.spear, village.sword, village.axe, village.archer, village.spy, village.light, village.marcher, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
+                        unit !== void 0 && (innerHTML += '<td class="unit-item' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>');
                     });
                     innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="ScriptAPI.RequestXML(this)" value="SEND"></td></tr>';
                 }); 
@@ -179,11 +179,13 @@ window.worldDataUnits = {
     'tbody': {
         archer: '<td><input type="radio" id="unit_archer" name="chosen_units" value="archer"></td>', marcher: '<td><input type="radio" id="unit_marcher" name="chosen_units" value="marcher"></td>',
     },
+    'content': 11,
     init: function() {
-        !this.includes.archer && ['thead.archer', 'thead.marcher', 'tbody.archer', 'tbody.marcher'].forEach((el) => {
-            var [container, unit] = el.split('.'); 
-            return window.worldDataUnits[container][unit] = '';
-        });      
+        !this.includes.archer && ['thead.archer', 'thead.marcher', 'tbody.archer', 'tbody.marcher'].forEach((content) => {
+            var [container, unit] = content.split('.'); 
+            return worldDataUnits[container][unit] = String();
+        });
+        this.worldDataUnits.content = 9;      
     },
 };
 / STRING HTML CONTENT /;
