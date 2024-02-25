@@ -73,15 +73,15 @@ window.ScriptAPI = {
     },
     RequestXML: function(event) {
         / OPEN NEW TAB WITH FILLED UNITS /;
-        var village = [];
+        var columns = [];
         var HTMLCollection = event.closest('tr').cells;
-        Array.from(HTMLCollection).forEach(el => {
-            village.push(!el.className.includes('hidden') ? el.textContent : 0);
-        });
-        window.open('/game.php?village=' + window.APIUpdated.database[village[1]] + '&screen=place', '_blank').onload = function (event) {
-            this.$(':text').each(function(index) {
-                index <= game_data.units.length - 2 ? this.value = village[index+3] : this.value = village[2];
+        Array.from(HTMLCollection).slice(1, -3).forEach((el) => columns.push(!el.className.includes('hidden') ? el.textContent : 0));
+        window.open('/game.php?village=' + window.APIUpdated.database[columns[0]] + '&screen=place', '_blank').onload = function (event) {
+            var units = columns.slice(3, -3);
+            this.$('.unitsInput').each(function(i) {
+                return this.value = units[i];
             });
+            document.querySelector('.target-input-field').value = columns[1];
         }
     },
     closeScript: function(event) {
