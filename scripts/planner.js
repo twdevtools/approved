@@ -26,10 +26,10 @@ window.ScriptAPI = {
         var $DY = Math.abs($Y1 - $Y2);
         return Math.sqrt($DX * $DX + $DY * $DY);
     },
-    formatSeconds: function (unformattedTime) {
-        var $hours = Math.floor(unformattedTime / 3600);
-        var $minutes = Math.floor(unformattedTime % 3600 / 60);
-        var $seconds = Math.floor(unformattedTime % 60);
+    formatSeconds: function ($time) {
+        var $hours = Math.floor($time / 3600);
+        var $minutes = Math.floor($time % 3600 / 60);
+        var $seconds = Math.floor($time % 60);
         return ('' + $hours).padStart(2, '0') + ':' + ('' + $minutes).padStart(2, '0') + ':' + ('' + $seconds).padStart(2, '0');
     },
     formatDateTime: function ($date) {
@@ -80,7 +80,7 @@ window.ScriptAPI = {
         });
         window.open('/game.php?village=' + window.APIUpdated.database[village[1]] + '&screen=place', '_blank').onload = function (event) {
             this.$(':text').each(function(index) {
-                index <= worldDataUnits.content ? this.value = village[index+3] : this.value = village[2];
+                index <= game_data.units.length - 2 ? this.value = village[index+3] : this.value = village[2];
             });
         }
     },
@@ -100,7 +100,7 @@ window.ScriptAPI = {
             var [targetX, targetY] = this.cells[2].textContent.split('|');
             content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
             ['&att_spear=', '&att_sword=', '&att_axe=', '&att_archer=', '&att_spy=', '&att_light=', '&att_marcher=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
-                if (index <= worldDataUnits.content) {
+                if (index <= game_data.units.length - 2) {
                     var cells = this.cells[index+3];
                     content += att + (!cells.className.includes('hidden') ? cells.textContent : 0)
                 }; 
@@ -129,8 +129,8 @@ window.ScriptAPI = {
             document.querySelector('.coordinates').value.split(' ').forEach(
                 (coord) => realCoordinates[coord] = true
             );
-            $($xml).find('.quickedit-label').each(function (i) {
-                if (typeof realCoordinates[window.coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0]] === 'boolean') {
+            $($xml).find('.quickedit-label').each(function (i, coord) {
+                if (typeof realCoordinates[coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0]] === 'boolean') {
                     $(this).closest('tr').find('.unit-item').each(function (i, amount) {
                         realUnits[game_data.units[i]] = Number(this.textContent);
                     });
