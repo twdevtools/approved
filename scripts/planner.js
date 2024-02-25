@@ -96,15 +96,13 @@ window.ScriptAPI = {
         / INIT EXPORT BB CODE /;
         var content = '[table][**]Unit[||]From[||]To[||]Launch Time[||]Send[/**]';
         $('.commands-found tr').slice(1).each(function(i) {
-            var village = this.cells[1].textContent;
-            var [targetX, targetY] = this.cells[2].textContent.split('|');
-            content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
-            game_data.units.slice(0, -1).forEach((unit, index) => {
-                if (index <= game_data.units.length - 2) {
-                    var cells = this.cells[index+3];
-                    content += `&att_${unit}=` + (!cells.className.includes('hidden') ? cells.textContent : 0)
-                }; 
-            })
+            var HTMLCollection = Array.from(this.cells), village = HTMLCollection[1].textContent, target = HTMLCollection[2].textContent, launchTime = HTMLCollection[-3].textContent;
+            var [targetX, targetY] = target.split('|');
+            content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + target + ' [|] ' + launchTime + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
+            game_data.units.slice(0, -1).forEach((unit, i) => {
+                var units = HTMLCollection.slice(3);
+                content += `&att_${unit}=` + (!units[i].className.includes('hidden') ? units[i].textContent : 0)  
+            });
             content += ']SEND[/url]';
         });
         content += '[/table]';
