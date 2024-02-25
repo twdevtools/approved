@@ -81,7 +81,7 @@ window.ScriptAPI = {
             this.$('.unitsInput').each(function(i) {
                 return this.value = units[i];
             });
-            document.querySelector('.target-input-field').value = columns[1];
+            this.document.querySelector('.target-input-field').value = columns[1];
         };
     },
     closeScript: function(event) {
