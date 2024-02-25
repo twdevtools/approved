@@ -99,13 +99,13 @@ window.ScriptAPI = {
             var village = this.cells[1].textContent;
             var [targetX, targetY] = this.cells[2].textContent.split('|');
             content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
-            ['&att_spear=', '&att_sword=', '&att_axe=', '&att_archer=', '&att_spy=', '&att_light=', '&att_marcher=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
+            game_data.units.slice(0, -1).forEach((unit, index) => {
                 if (index <= game_data.units.length - 2) {
                     var cells = this.cells[index+3];
-                    content += att + (!cells.className.includes('hidden') ? cells.textContent : 0)
+                    content += `&att_${unit}=` + (!cells.className.includes('hidden') ? cells.textContent : 0)
                 }; 
-            });
-            content += ']SEND[/url]'
+            })
+            content += ']SEND[/url]';
         });
         content += '[/table]';
         return navigator.clipboard.writeText(content), UI.SuccessMessage('BB Code copied!');
@@ -151,12 +151,11 @@ window.ScriptAPI = {
                 UI.ErrorMessage('No possibilities found!');
             } else {
                 / CREATE DYNAMIC TABLE /;
-                var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th>' + worldDataUnits.thead.archer + '<th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th>' + worldDataUnits.thead.marcher + '<th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
+                var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th>'; game_data.units.slice(0, -1).forEach((unit, i) => innerHTML += '<th><label for="unit_' + unit + '"><img src="/graphic/unit/unit_' + unit + '.png"></label></th>'); innerHTML += '<th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
                 realCombinations.forEach((village, index) => {
-                    var unitsSpeed = window.APIUpdated.units;
                     innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + window.APIUpdated.database[village.coord] + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + window.APIUpdated.database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
-                    [village.spear, village.sword, village.axe, village.archer, village.spy, village.light, village.marcher, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
-                        unit !== void 0 && (innerHTML += '<td class="unit-item' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>');
+                    game_data.units.slice(0, -1).forEach((unit, i) => {
+                        return innerHTML += '<td class="unit-item' + (village[unit] && window.APIUpdated.units[ScriptAPI.value] >= window.APIUpdated.units[unit] ? '' : ' hidden') + '"' + (village[unit] && window.APIUpdated.units[ScriptAPI.value] >= window.APIUpdated.units[unit] ? 'style="background: #C3FFA5"' : '') + '>' + village[unit] + '</td>';
                     });
                     innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="ScriptAPI.RequestXML(this)" value="SEND"></td></tr>';
                 }); 
@@ -171,7 +170,7 @@ window.ScriptAPI = {
 / STRING HTML CONTENT /;
 ScriptAPI.stringHTML = '<div class="vis content-border" style="width: 789px; border-radius: 8px 8px 8px 8px; z-index: 7; position: fixed; left: 20%; top: 20%; cursor: move"><div class="close"><a style="position: absolute; top: 5px; right: 10px; z-index: 1; font-size: large" onclick="ScriptAPI.closeScript(this)" href="#">X</a></div><div class="content-title"><table width="100%"><tbody><tr><th style="text-align: center; white-space: nowrap; padding: 6px" colspan="4"><h3 style="margin: 0px">MASS ATTACK PLANNER</h3></th></tr><tr><td align="center"><strong>LANDING TIME:</strong></td><td><input type="text" class="arrival" style="font-size: 13pt" placeholder="DD/MM/AAAA 00:00:00"></td><td align="center"><strong>SIGIL:</strong></td><td><input type="text" class="sigil" style="width: 49px; font-size: 13pt" placeholder="00"></td></tr></tbody></table></div><div class="container"><table width="100%"><thead><tr>'; game_data.units.slice(0, -1).forEach((units, i) => ScriptAPI.stringHTML += '<th><label for="unit_' + units + '"><img src="/graphic/unit/unit_' + units + '.png"></label></th>'); ScriptAPI.stringHTML += '</tr></thead><tbody><tr>'; game_data.units.slice(0, -1).forEach((units, i) => ScriptAPI.stringHTML += '<td><input type="radio" id="unit_' + units + '" name="chosen_units" value="' + units + '"></td>'); ScriptAPI.stringHTML += '</tr></tbody></table></div><div class="textarea-content"><table width="100%"><thead><tr><th><label for="coordinates"><strong>YOUR VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="coordinates" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody><thead><tr><th><label for="targets"><strong>DESTINATION VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="targets" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody></table></div><div class="action-content"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="ScriptAPI.initCalculate(this)" value="CALCULATE TIMES"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="ScriptAPI.exportBBCode(this)" value="EXPORT BB CODE"></div><div class="author" style="margin: 2px"><small><strong>MASS ATTACK PLANNER v1.0 BY&nbsp;<span style="color: red">K I N G S</span></strong></small></div><div class="commands-found"></div></div>';
 $(document.body).append(ScriptAPI.stringHTML);
-jQuery('.vis.content-border').draggable();
+$('.vis.content-border').draggable();
 / DATABASE AND UNITS LAST UPDATED (1X PER HOUR) /;
 var updatedTime = Date.now();
 var APIUpdated = JSON.parse(localStorage.getItem('APIUpdated'));
