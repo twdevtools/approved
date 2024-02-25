@@ -1,7 +1,7 @@
 /*
  * Script Name: MASS ATTACK PLANNER
  * Version: v1.0
- * Last Updated: 2024-02-24
+ * Last Updated: 2024-02-25
  * Author: K I N G S
  * Author Contact: +55 48-98824-2773
  */
@@ -10,16 +10,13 @@
  * This script can NOT be cloned and modified without permission from the script author.
  --------------------------------------------------------------------------------------*/
 
-/ STRING HTML CONTENT /;
-window.stringHTML = '<div class="vis content-border" style="width: 789px; border-radius: 8px 8px 8px 8px; z-index: 7; position: fixed; left: 20%; top: 20%; cursor: move"><div class="close"><a style="position: absolute; top: 5px; right: 10px; z-index: 1; font-size: large" onclick="content.closeScript(this)"href="#">X</a></div><div class="content"><table width="100%"><tbody><tr><th style="text-align: center; white-space: nowrap; padding: 6px" colspan="4"><h3 style="margin: 0px">MASS ATTACK PLANNER</h3></th></tr><tr><td align="center"><strong>LANDING TIME:</strong></td><td><input type="text" class="arrival" style="font-size: 13pt" placeholder="DD/MM/AAAA 00:00:00"></td><td align="center"><strong>SIGIL:</strong></td><td><input type="text" class="sigil" style="width: 49px; font-size: 13pt" placeholder="00"></td></tr></tbody></table></div><table width="100%"><thead><tr><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th> <th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th> </tr></thead><tbody><tr><td><input type="radio" id="unit_spear" name="chosen_units" value="spear"></td> <td><input type="radio" id="unit_sword" name="chosen_units" value="sword"></td> <td><input type="radio" id="unit_axe" name="chosen_units" value="axe"></td><td><input type="radio" id="unit_spy" name="chosen_units" value="spy"></td> <td><input type="radio" id="unit_light" name="chosen_units" value="light"></td><td><input type="radio" id="unit_heavy" name="chosen_units" value="heavy"></td> <td><input type="radio" id="unit_ram" name="chosen_units" value="ram" checked></td><td><input type="radio" id="unit_catapult" name="chosen_units" value="catapult"></td> <td><input type="radio" id="unit_knight" name="chosen_units" value="knight"></td> <td><input type="radio" id="unit_snob" name="chosen_units" value="snob"></td> </tr></tbody></table><div class="textarea-content"><table width="100%"><thead><tr><th><label for="coordinates"><strong>YOUR VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="coordinates" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody><thead><tr><th><label for="targets"><strong>DESTINATION VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="targets" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody></table></div><div class="action-content"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="content.initCalculate(this)" value="CALCULATE TIMES"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="content.exportBBCode(this)" value="EXPORT BB CODE"></div><div class="author" style="margin: 2px"><small><strong>MASS ATTACK PLANNER v1.0 BY&nbsp;<span style="color: red">K I N G S</span></small></div><div class="commands-found"></div></div>';
-$(stringHTML).appendTo(document.body).draggable();
-/ SCRIPT FUNCTIONS CONTENT /;
-window.content = {
-    calculateTimes: function (landingTIme, currentTime, sigil, coord, target, unit) {
+/ SCRIPT API FUNCTIONS CONTENT /;
+window.ScriptAPI = {
+    calculateTimes: function (landingTime, currentTime, sigil, coord, target, unit) {
         var distance = this.calculateDistance(coord, target);
         var sigilRatio = 1 + Number(sigil) / 100;
         var unitTime = (distance * unit * 60000) / sigilRatio;
-        var launchTime = new Date(Math.round((landingTIme - unitTime) / 1000) * 1000);
+        var launchTime = new Date(Math.round((landingTime - unitTime) / 1000) * 1000);
         return launchTime > currentTime && distance > 0 && launchTime;
     },
     calculateDistance: function (coord, target) {
@@ -75,6 +72,7 @@ window.content = {
         });
     },
     RequestXML: function(event) {
+        / OPEN NEW TAB WITH FILLED UNITS /
         var village = [];
         var HTMLCollection = event.closest('tr').cells;
         Array.from(HTMLCollection).forEach(el => {
@@ -100,7 +98,7 @@ window.content = {
         $('.commands-found tr').slice(1).each(function(i) {
             var village = this.cells[1].textContent;
             var [targetX, targetY] = this.cells[2].textContent.split('|');
-            content += '[*][unit]' + value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
+            content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + this.cells[2].textContent + ' [|] ' + this.cells[13].textContent + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
             ['&att_spear=', '&att_sword=', '&att_axe=', '&att_spy=', '&att_light=', '&att_heavy=', '&att_ram=', '&att_catapult=', '&att_knight=', '&att_snob='].forEach((att, index) => {
                 if (index <= 9) {
                     var cells = this.cells[index+3];
@@ -115,29 +113,31 @@ window.content = {
     initCalculate: function (event) {
         / INIT CALCULATE TIMES /;
         var unformattedTime = $('.server_info')[0].firstElementChild;
-        var currentTime = new Date(this.convertToValidFormat(unformattedTime.nextElementSibling.innerHTML + ' ' + unformattedTime.innerHTML));
+        var currentTime = new Date(this.convertToValidFormat(
+            `${unformattedTime.nextElementSibling.innerHTML} ${unformattedTime.innerHTML}`
+        ));
         var landingTime = new Date(this.convertToValidFormat(document.querySelector('.arrival').value));
         var sigil = document.querySelector('.sigil').value;
+        / FORMAT TEXTAREA /;
         document.querySelectorAll('textarea').forEach(el => /\d{1,3}\|\d{1,3}/.test(el.value) && (
             el.value = el.value.match(/(\d{1,3}\|\d{1,3})/g).join(' ')
         ));
-        $.ajax({
-            'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home',
-            'method': 'GET'
-        }).then($xml => {
+        $.ajax({'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home', 'method': 'GET'}).then(($xml) => {
             var realUnits = {}, realCombinations = [], realCoordinates = {};
-            window.value = document.querySelector('input:checked').value;
-            document.querySelector('.coordinates').value.split(' ').forEach(coord => realCoordinates[coord] = true);
-            $($xml).find('.quickedit-label').each(function (index, villages) {
+            this.value = document.querySelector('input:checked').value;
+            document.querySelector('.coordinates').value.split(' ').forEach(
+                (coord) => realCoordinates[coord] = true
+            );
+            / FIND POSSIBLE COMBINATIONS /;
+            $($xml).find('.quickedit-label').each(function (i) {
                 if (typeof realCoordinates[window.coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0]] === 'boolean') {
-                    const data_id = this.closest('[data-id]').dataset.id;
                     $(this).closest('tr').find('.unit-item').each(function (i, amount) {
                         realUnits[game_data.units[i]] = Number(this.textContent);
                     });
-                    const {spear, sword, axe, spy, light, heavy, ram, catapult, knight, snob} = realUnits; 
+                    const {spear, sword, axe, archer, spy, light, marcher, heavy, ram, catapult, knight, snob} = realUnits; 
                     document.querySelector('.targets').value.split(' ').forEach(target => {
-                        (launchTime = content.calculateTimes(landingTime, currentTime, sigil, coord, target, window.APIUpdated.units[value])) && realUnits[value] && realCombinations.push({
-                            'data_id': data_id, 'coord': coord, 'target': target, 'spear': spear, 'sword': sword, 'axe': axe, 'spy': spy, 'light': light, 'heavy': heavy, 'ram': ram, 'catapult': catapult, 'knight': knight, 'snob': snob, 'launchTime': launchTime,
+                        (launchTime = ScriptAPI.calculateTimes(landingTime, currentTime, sigil, coord, target, window.APIUpdated.units[ScriptAPI.value])) && realUnits[ScriptAPI.value] && realCombinations.push({
+                            'coord': coord, 'target': target, 'spear': spear, 'sword': sword, 'axe': axe, 'archer': archer, 'spy': spy, 'light': light, 'marcher': marcher, 'heavy': heavy, 'ram': ram, 'catapult': catapult, 'knight': knight, 'snob': snob, 'launchTime': launchTime,
                         });
                     }); 
                 };
@@ -149,14 +149,15 @@ window.content = {
             if (!realCombinations.length) {
                 UI.ErrorMessage('No possibilities found!');
             } else {
+                / CREATE DYNAMIC TABLE /;
                 var innerHTML = '<label><span>&nbsp;' + realCombinations.length + '</span>&nbsp;combinations found</label><div class="container" style="max-height: 300px; overflow: auto"><table width="100%"><thead><tr><th style="text-align: center">#</th><th>From</th><th>To</th><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th><th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th><th>Launch Time</th><th>Send in</th><th style="text-align: center">Send</th></tr></thead><tbody>';
                 realCombinations.forEach((village, index) => {
                     var unitsSpeed = window.APIUpdated.units;
-                    innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + village.data_id + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + window.APIUpdated.database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
+                    innerHTML += '<tr><td align="center">' + (index + 1) + '</td><td align="center"><a href="/game.php?village=' + window.APIUpdated.database[village.coord] + '&screen=overview" target="_blank" rel="noopener noreferrer">' + village.coord + '</a></td><td align="center"><a href="' + game_data.link_base_pure + 'info_village&id=' + window.APIUpdated.database[village.target] + '"target="_blank" rel="noopener noreferrer">' + village.target + '</a></td>';
                     [village.spear, village.sword, village.axe, village.spy, village.light, village.heavy, village.ram, village.catapult, village.knight, village.snob].forEach((unit, i) => {
-                        innerHTML += '<td class="unit-item' + (unit && unitsSpeed[value] >= unitsSpeed[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && unitsSpeed[value] >= unitsSpeed[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
+                        innerHTML += '<td class="unit-item' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? '' : ' hidden') + '"' + (unit && unitsSpeed[ScriptAPI.value] >= unitsSpeed[game_data.units[i]] ? 'style="background: #C3FFA5"' : '') + '>' + unit + '</td>';
                     });
-                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="content.RequestXML(this)" value="SEND"></td></tr>';
+                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="ScriptAPI.RequestXML(this)" value="SEND"></td></tr>';
                 }); 
                 innerHTML += '</tbody></table></div>'; document.querySelector('.commands-found').innerHTML = innerHTML;
                 Timing.tickHandlers.timers.init(); $(window.TribalWars).on('global_tick', function (event) {
@@ -166,10 +167,14 @@ window.content = {
         });
     },
 };
-/ DATABASE AND UNITS LAST UPDATED /;
+/ STRING HTML CONTENT /;
+const stringHTML = '<div class="vis content-border" style="width: 789px; border-radius: 8px 8px 8px 8px; z-index: 7; position: fixed; left: 20%; top: 20%; cursor: move"><div class="close"><a style="position: absolute; top: 5px; right: 10px; z-index: 1; font-size: large" onclick="ScriptAPI.closeScript(this)"href="#">X</a></div><div class="content"><table width="100%"><tbody><tr><th style="text-align: center; white-space: nowrap; padding: 6px" colspan="4"><h3 style="margin: 0px">MASS ATTACK PLANNER</h3></th></tr><tr><td align="center"><strong>LANDING TIME:</strong></td><td><input type="text" class="arrival" style="font-size: 13pt" placeholder="DD/MM/AAAA 00:00:00"></td><td align="center"><strong>SIGIL:</strong></td><td><input type="text" class="sigil" style="width: 49px; font-size: 13pt" placeholder="00"></td></tr></tbody></table></div><table width="100%"><thead><tr><th><label for="unit_spear"><img src="/graphic/unit/unit_spear.png"></label></th><th><label for="unit_sword"><img src="/graphic/unit/unit_sword.png"></label></th><th><label for="unit_axe"><img src="/graphic/unit/unit_axe.png"></label></th><th><label for="unit_spy"><img src="/graphic/unit/unit_spy.png"></label></th><th><label for="unit_light"><img src="/graphic/unit/unit_light.png"></label></th> <th><label for="unit_heavy"><img src="/graphic/unit/unit_heavy.png"></label></th> <th><label for="unit_ram"><img src="/graphic/unit/unit_ram.png"></label></th> <th><label for="unit_catapult"><img src="/graphic/unit/unit_catapult.png"></label></th> <th><label for="unit_knight"><img src="/graphic/unit/unit_knight.png"></label></th><th><label for="unit_snob"><img src="/graphic/unit/unit_snob.png"></label></th> </tr></thead><tbody><tr><td><input type="radio" id="unit_spear" name="chosen_units" value="spear"></td> <td><input type="radio" id="unit_sword" name="chosen_units" value="sword"></td> <td><input type="radio" id="unit_axe" name="chosen_units" value="axe"></td><td><input type="radio" id="unit_spy" name="chosen_units" value="spy"></td> <td><input type="radio" id="unit_light" name="chosen_units" value="light"></td><td><input type="radio" id="unit_heavy" name="chosen_units" value="heavy"></td> <td><input type="radio" id="unit_ram" name="chosen_units" value="ram" checked></td><td><input type="radio" id="unit_catapult" name="chosen_units" value="catapult"></td> <td><input type="radio" id="unit_knight" name="chosen_units" value="knight"></td> <td><input type="radio" id="unit_snob" name="chosen_units" value="snob"></td> </tr></tbody></table><div class="textarea-content"><table width="100%"><thead><tr><th><label for="coordinates"><strong>YOUR VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="coordinates" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody><thead><tr><th><label for="targets"><strong>DESTINATION VILLAGES:</strong></label></th></tr></thead><tbody><tr><td><textarea class="targets" style="background: none; font-size: 11pt; resize: none; width: 775px; height: 50px;"></textarea></td></tr></tbody></table></div><div class="action-content"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="ScriptAPI.initCalculate(this)" value="CALCULATE TIMES"><input type="button" class="btn" style="margin: 4px; margin-top: auto" onclick="ScriptAPI.exportBBCode(this)" value="EXPORT BB CODE"></div><div class="author" style="margin: 2px"><small><strong>MASS ATTACK PLANNER v1.0 BY&nbsp;<span style="color: red">K I N G S</span></small></div><div class="commands-found"></div></div>';
+$(document.body).append(stringHTML);
+document.querySelector('.vis.content-border').draggable = true;
+/ DATABASE AND UNITS LAST UPDATED (1X PER HOUR) /;
 var updatedTime = Date.now();
 var APIUpdated = JSON.parse(localStorage.getItem('APIUpdated'));
-(!APIUpdated || APIUpdated.lastUpdated + (3600 * 1000) <= updatedTime) && this.content.RequestAPI().then(event => {
+(!APIUpdated || APIUpdated.lastUpdated + (3600 * 1000) <= updatedTime) && this.ScriptAPI.RequestAPI().then(event => {
     var contentUpdated = {
         'lastUpdated': this.updatedTime, 'database': this.APIUpdated.database, 'units': this.APIUpdated.units,
     };
