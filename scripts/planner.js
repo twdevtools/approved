@@ -77,12 +77,12 @@ window.ScriptAPI = {
         var HTMLCollection = event.closest('tr').cells;
         Array.from(HTMLCollection).slice(1, -3).forEach((el) => columns.push(!el.className.includes('hidden') ? el.textContent : 0));
         window.open('/game.php?village=' + window.APIUpdated.database[columns[0]] + '&screen=place', '_blank').onload = function (event) {
-            var units = columns.slice(3, -3);
+            var units = columns.slice(2);
             this.$('.unitsInput').each(function(i) {
                 return this.value = units[i];
             });
             document.querySelector('.target-input-field').value = columns[1];
-        }
+        };
     },
     closeScript: function(event) {
         return document.querySelector('.vis.content-border').remove();
