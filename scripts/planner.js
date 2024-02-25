@@ -96,11 +96,11 @@ window.ScriptAPI = {
         / INIT EXPORT BB CODE /;
         var content = '[table][**]Unit[||]From[||]To[||]Launch Time[||]Send[/**]';
         $('.commands-found tr').slice(1).each(function(i) {
-            var HTMLCollection = Array.from(this.cells), village = HTMLCollection[1].textContent, target = HTMLCollection[2].textContent, launchTime = HTMLCollection[-3].textContent;
+            var columns = Array.from(this.cells), village = columns[1].textContent, target = columns[2].textContent, launchTime = columns.slice(-3)[0].textContent;
             var [targetX, targetY] = target.split('|');
             content += '[*][unit]' + ScriptAPI.value + '[/unit] [|] ' + village + ' [|] ' + target + ' [|] ' + launchTime + ' [|] [url=' + window.location.origin + '/game.php?village=' + window.APIUpdated.database[village] + '&screen=' + 'place&x=' + targetX + '&y=' + targetY + '&from=simulator';
             game_data.units.slice(0, -1).forEach((unit, i) => {
-                var units = HTMLCollection.slice(3);
+                var units = columns.slice(3);
                 content += `&att_${unit}=` + (!units[i].className.includes('hidden') ? units[i].textContent : 0)  
             });
             content += ']SEND[/url]';
