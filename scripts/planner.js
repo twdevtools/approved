@@ -1,7 +1,7 @@
 /*
  * Script Name: MASS ATTACK PLANNER
  * Version: v1.0
- * Last Updated: 2024-02-25
+ * Last Updated: 2024-02-26
  * Author: K I N G S
  * Author Contact: +55 48-98824-2773
  */
@@ -19,23 +19,23 @@ window.ScriptAPI = {
         var launchTime = new Date(Math.round((landingTime - unitTime) / 1000) * 1000);
         return launchTime > currentTime && distance > 0 && launchTime;
     },
-    calculateDistance: function (coord, target) {
-        var [$X1, $Y1] = coord.split('|');
-        var [$X2, $Y2] = target.split('|');
-        var $DX = Math.abs($X1 - $X2);
-        var $DY = Math.abs($Y1 - $Y2);
-        return Math.sqrt($DX * $DX + $DY * $DY);
+    calculateDistance: function (from, to) {
+        var [x1, y1] = from.split('|');
+        var [x2, y2] = to.split('|');
+        var deltaX = Math.abs(x1 - x2);
+        var deltaY = Math.abs(y1 - y2);
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     },
-    formatSeconds: function ($time) {
-        var $hours = Math.floor($time / 3600);
-        var $minutes = Math.floor($time % 3600 / 60);
-        var $seconds = Math.floor($time % 60);
+    secondsToHms: function (timestamp) {
+        var $hours = Math.floor(timestamp / 3600);
+        var $minutes = Math.floor(timestamp % 3600 / 60);
+        var $seconds = Math.floor(timestamp % 60);
         return ('' + $hours).padStart(2, '0') + ':' + ('' + $minutes).padStart(2, '0') + ':' + ('' + $seconds).padStart(2, '0');
     },
     formatDateTime: function ($date) {
         return ('' + $date.getDate()).padStart(2, '0') + '/' + ('' + ($date.getMonth() + 1)).padStart(2, '0') + '/' + $date.getFullYear() + ' ' + ('' + $date.getHours()).padStart(2, '0') + ':' + ('' + $date.getMinutes()).padStart(2, '0') + ':' + ('' + $date.getSeconds()).padStart(2, '0');
     },
-    RequestAPI: function() {
+    RequestAPI: function(event) {
         return new Promise(async (resolve) => {
             try {
                 window.APIUpdated = {
@@ -87,10 +87,10 @@ window.ScriptAPI = {
     closeScript: function(event) {
         return document.querySelector('.vis.content-border').remove();
     },
-    convertToValidFormat: function (invalidFormat) {
-        var [$Y, $T] = invalidFormat.split(' ');
-        var [$D, $M, $A] = $Y.split('/');
-        return $A + '-' + $M + '-' + $D + ' ' + $T;
+    convertToValidFormat: function (timestamp) {
+        var [date, time] = timestamp.split(' ');
+        var [day, month, year] = date.split('/');
+        return year + '-' + month + '-' + day + ' ' + time;
     },
     exportBBCode: function(event) {
         / INIT EXPORT BB CODE /;
@@ -111,22 +111,16 @@ window.ScriptAPI = {
     initCalculate: function (event) {
         / INIT CALCULATE TIMES /;
         var unformattedTime = $('.server_info')[0].firstElementChild;
-        var currentTime = new Date(this.convertToValidFormat(
-            `${unformattedTime.nextElementSibling.innerHTML} ${unformattedTime.innerHTML}`
-        ));
+        var currentTime = new Date(this.convertToValidFormat(`${unformattedTime.nextElementSibling.innerHTML} ${unformattedTime.innerHTML}`));
         var landingTime = new Date(this.convertToValidFormat(document.querySelector('.arrival').value));
         var sigil = document.querySelector('.sigil').value;
         / FORMAT TEXTAREA /;
-        document.querySelectorAll('textarea').forEach(el => /\d{1,3}\|\d{1,3}/.test(el.value) && (
-            el.value = el.value.match(/(\d{1,3}\|\d{1,3})/g).join(' ')
-        ));
+        document.querySelectorAll('textarea').forEach(el => /\d{1,3}\|\d{1,3}/.test(el.value) && (el.value = el.value.match(/(\d{1,3}\|\d{1,3})/g).join(' ')));
         / FIND ALL AVAILABLE VILLAGES ANDA TROOPS /;
         $.ajax({'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home', 'method': 'GET'}).then(($xml) => {
             var realUnits = {}, realCombinations = [], realCoordinates = {};
             this.value = document.querySelector('input:checked').value;
-            document.querySelector('.coordinates').value.split(' ').forEach(
-                (coord) => realCoordinates[coord] = true
-            );
+            document.querySelector('.coordinates').value.split(' ').forEach((coord) => realCoordinates[coord] = true);
             $($xml).find('.quickedit-label').each(function (i, coord) {
                 if (typeof realCoordinates[coord = this.textContent.match(/(\d{1,3}\|\d{1,3})/)[0]] === 'boolean') {
                     $(this).closest('tr').find('.unit-item').each(function (i, amount) {
@@ -134,7 +128,7 @@ window.ScriptAPI = {
                     });
                     / FIND POSSIBLE COMBINATIONS /;
                     const {spear, sword, axe, archer, spy, light, marcher, heavy, ram, catapult, knight, snob} = realUnits; 
-                    document.querySelector('.targets').value.split(' ').forEach(target => {
+                    document.querySelector('.targets').value.split(' ').forEach((target, index) => {
                         (launchTime = ScriptAPI.calculateTimes(landingTime, currentTime, sigil, coord, target, window.APIUpdated.units[ScriptAPI.value])) && realUnits[ScriptAPI.value] && realCombinations.push({
                             'coord': coord, 'target': target, 'spear': spear, 'sword': sword, 'axe': axe, 'archer': archer, 'spy': spy, 'light': light, 'marcher': marcher, 'heavy': heavy, 'ram': ram, 'catapult': catapult, 'knight': knight, 'snob': snob, 'launchTime': launchTime,
                         });
@@ -155,7 +149,7 @@ window.ScriptAPI = {
                     game_data.units.slice(0, -1).forEach((unit, i) => {
                         return innerHTML += '<td class="unit-item' + (village[unit] && window.APIUpdated.units[ScriptAPI.value] >= window.APIUpdated.units[unit] ? '' : ' hidden') + '"' + (village[unit] && window.APIUpdated.units[ScriptAPI.value] >= window.APIUpdated.units[unit] ? 'style="background: #C3FFA5"' : '') + '>' + village[unit] + '</td>';
                     });
-                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.formatSeconds((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="ScriptAPI.RequestXML(this)" value="SEND"></td></tr>';
+                    innerHTML += '<td>' + this.formatDateTime(village.launchTime) + '</td><td><span class="timer">' + this.secondsToHms((village.launchTime - currentTime) / 1000) + '</span</td><td align="center"><input type="button" class="btn" style="padding: 3px" onclick="ScriptAPI.RequestXML(this)" value="SEND"></td></tr>';
                 }); 
                 innerHTML += '</tbody></table></div>'; document.querySelector('.commands-found').innerHTML = innerHTML;
                 Timing.tickHandlers.timers.init(); $(window.TribalWars).on('global_tick', function (event) {
