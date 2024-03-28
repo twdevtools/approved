@@ -116,8 +116,8 @@ window.ScriptAPI = {
         var sigil = document.querySelector('.sigil').value;
         / FORMAT TEXTAREA /;
         document.querySelectorAll('textarea').forEach(el => /\d{1,3}\|\d{1,3}/.test(el.value) && (el.value = el.value.match(/(\d{1,3}\|\d{1,3})/g).join(' ')));
-        / FIND ALL AVAILABLE VILLAGES ANDA TROOPS /;
-        $.ajax({'url': game_data.link_base_pure + 'overview_villages&mode=units&type=own_home', 'method': 'GET'}).then(($xml) => {
+        / FIND ALL AVAILABLE VILLAGES AND TROOPS /;
+        $.ajax({'url': game_data.link_base_pure + 'overview_villages&type=own_home&mode=units&group=0', 'method': 'GET'}).then(($xml) => {
             var realUnits = {}, realCombinations = [], realCoordinates = {};
             this.value = document.querySelector('input:checked').value;
             document.querySelector('.coordinates').value.split(' ').forEach((coord) => realCoordinates[coord] = true);
