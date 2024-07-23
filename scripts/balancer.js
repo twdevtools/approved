@@ -102,7 +102,7 @@ function createMainInterface(){
 
     let html_info=`
     
-    <div id="div_container" class="scriptContainer" style="width: 637px;">
+    <div id="div_container" class="scriptContainer"` + (mobiledevice && ' style="width: 637px;' || ``) + `">
         <div class="scriptHeader">
             <div style=" margin-top:10px;"><h2>Resources balancer</h2></div>
             <div style="position:absolute;top:10px;right: 10px;"><a href="#" onclick="$('#div_container').remove()"><img src="https://img.icons8.com/emoji/24/000000/cross-mark-button-emoji.png"/></a></div>
