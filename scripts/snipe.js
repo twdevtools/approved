@@ -1,64 +1,102 @@
-/*
- * Script Name: SNIPE CANCELLATION
- * Version: v1.0
- * Last Updated: 2024-02-23
- * Author: K I N G S
- * Author Contact: +55 48-98824-2773
- */
-
-/*--------------------------------------------------------------------------------------
- * This script can NOT be cloned and modified without permission from the script author.
- --------------------------------------------------------------------------------------*/
-
-(html = '<div class="vis moveable cancel content-border" style="width: 500px; border-radius: 8px 8px 8px 8px; z-index: 7; cursor: move; position: fixed; left: 30%; top: 20%"><div class="close"><a style="position: absolute; top: 5px; right: 10px; z-index: 1; font-size: large" onclick="content.closeScript(this)"href="#">X</a></div><div class="cancel_content"><table class="vis" width="100%"><tbody><tr><th style="text-align: center; white-space: nowrap; font-size: 16px; padding: 6px; margin: 0px" colspan="2"><strong>SNIPE CANCELLATION</strong></th></tr>' + (localSave = JSON.parse(localStorage.getItem('cancelContent')), '<tr><td align="center"><strong>NOBLE ARRIVAL TIME:</strong></td><td><input type="text" class="arrival" placeholder="00:00:00" value="' + (localSave ? localSave.arrival : '') + '"style="margin: 4px; height: 22px; font-size: 13pt"></td></tr><tr><td align="center"><strong>YOUR COMMAND EXIT TIME:</strong></td><td><input type="text" class="exit" placeholder="00:00:00" value="' + (localSave ? localSave.exit : '') + '"style="margin: 4px; height: 22px; font-size: 13pt"></td></tr><tr><td align="center"><strong>COMMAND DURATION:</strong></td><td><input type="text" class="duration" placeholder="00:00:00" value="' + (localSave ? localSave.duration : '') + '"style="margin: 4px; height: 22px; font-size: 13pt"></td></tr></tbody></table></div>') + '<div class="content"><input type="button" class="btn" style="margin: 4px" onclick="content.initCalculate()" value="CALCULATE TIMES"></div><div class="author" style="margin: 2px"><small><strong>SNIPE CANCELLATION v1.0 BY&nbsp;<span style="color: red">K I N G S</span></small></div></div>', $(document.body).append(html), $('.vis.moveable.cancel.content-border').draggable());
-/ LIBRARY FUNCTIONS CONTENT /;
-window.content = {
-    formatSeconds: function (time) {
-        var hour = Math.floor(time / 3600);
-        var min = Math.floor(time % 3600 / 60);
-        var sec = Math.floor(time % 60);
-        return ('' + hour).padStart(2, '0') + ':' + ('' + min).padStart(2, '0') + ':' + ('' + sec).padStart(2, '0');
+this.ScriptAPI = {
+    init: function(event) {
+        window.language = [
+            "f0eadcecffbb5f66bf549645d20bd0cd", 
+            "b8a8de82dd0387e97241d76edb64c78e", 
+            "99d26c335ff06a1f4f32e1b78ccc0855", 
+            "2d0ea4e2a5d29e1321ae6d9ff1861052", 
+            "c0a48f32c11d4e56173d7bb151154236", 
+            "00a5cf879180a196bf1720187b4a29ba",
+            "23176c991f48ba3a17942b82cc7787b2", 
+            "19c1b76c51e0eb5d5c92221e6e891bad", 
+            "1f17626a373b6a69f8287ed8781e1e0a", 
+            "4caa55b7c609d00fb95f03cd1ceafeab", 
+            "b575d8d37fffa782cfa3592d1cfc65da", 
+            "a0bccd9315fa3e38aef93f34cd116aa9",
+        ].reduce((acc, $pb, i) => (acc[lang[$pb].toLowerCase(null)] = `${i+1}`.padStart(2, '0') || !void 0) && acc, {});
+        let scriptHTML = `<div id="ScriptAPI" class="vis content-border" style="position: fixed; border-radius: 8px; top: 30%; left: 40%; width: 650px;">
+            <a href="#" onclick="return $('#ScriptAPI').remove()" style="position: absolute; font-size: 20px; top: 3px; right: 10px; z-index: 1;">X</a>
+            <h4 style="text-align: center; border-radius: 8px 8px 0px 0px; font-size: 16px; padding: 6px;">SNIPE CANCELAMENTO</h4>
+            <style>#ScriptAPI input[type="text"] {font-size: 13pt; background: none; border: none;}#ScriptAPI th {text-align: center;}</style>
+            <table id="options" width="100%">
+                <tbody>
+                    <tr>
+                        <th>HORA DE CHEGADA NOBRE:</th>
+                        <td data-title="teste"><input id="snob-commands" type="text" placeholder="DD/MM/AAAA 00:00:00" value="01/08/2024 15:38:00"></td>                    
+                    </tr>
+                    <tr>
+                        <th>HORA DE SAÍDA COMANDO:</th>
+                        <td><input id="exit-commands" type="text" placeholder="DD/MM/AAAA 00:00:00" value="01/08/2024 15:28:00"></td>                       
+                    </tr>
+                    <tr>
+                        <th>TEMPO DO COMANDO:</th>
+                        <td><input id="time-commands" type="text" placeholder="00:00:00" value="01:00:00"></td>   
+                    </tr>
+                    <tr>
+                        <td colspan="100">
+                            <div id="commands-list" style="overflow: auto; max-height: 150px;">
+                            <style>#ScriptAPI #combinations-found td {text-align: center;font-family: monospace;font-weight: bold;font-size: larger;}#ScriptAPI #combinations-found td:has(button) {padding: 2px 0px 4px 0px;}#ScriptAPI #combinations-found button {font-size: 9px !important;font-family: monospace;}#ScriptAPI #combinations-found img {margin-right: 2px;cursor: pointer;}</style>
+                                <table style="border-spacing: 0px; width: 100%;">
+                                    <thead style="position: sticky; top: 0px; z-index: 1;">
+                                        <tr>
+                                            <th>CHEGADA NOBRE:</th>
+                                            <th>SAÍDA COMANDO:</th>
+                                            <th>TEMPO CANCELAR:</th>
+                                            <th>CANCELAR EM:</th>
+                                            <th>#</th>
+                                            <th>#</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="combinations-found"></tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="buttons" style="margin: 2px 0px 4px 2px;"><button class="btn" onclick="ScriptAPI.constructor(event);">CALCULAR TEMPOS</button></div>
+        </div>`
+        Timing.tickHandlers.timers.handleTimerEnd = $pb => $pb.target.closest('tr').remove();
+        return $(scriptHTML).appendTo(document.body).draggable() && $(document).on('click', ScriptAPI.times);
     },
-    formatMilliseconds: function (milli) {
-        var arr = milli.split(':');
-        return arr[0] * 3600000 + arr[1] * 60000 + arr[2] * 1000;
-    },
-    convertToValidFormat: function (date) {
-        var [year, time] = date.split(' ');
-        var [day, month, year] = year.split('/');
-        return year + '-' + month + '-' + day + ' ' + time;
-    },
-    calculateTimes: function (server, time, arrival, exit, duration) {
-        var convertTime = new Date(this.convertToValidFormat(server + ' ' + time));
-        var convertArrival = new Date(this.convertToValidFormat(server + ' ' + arrival));
-        var convertExit = new Date(this.convertToValidFormat(server + ' ' + exit));''
-        var formattedDuration = this.formatMilliseconds(duration);
-        return (i = (convertArrival - convertExit) / 2) > 0 && (t = convertExit.getTime() + i - convertTime) > 0 && formattedDuration && {'timer': '<span class="timer" style="color: red">' + this.formatSeconds(t / 1000) + '</span>', 'cancel': '<span style="color: #229b22">' + this.formatSeconds((formattedDuration - i) / 1000) + '</span>'};
-    },
-    extractTime: function (event) {
-        var content = $(event).closest('div').find('span').prop('textContent');
-        return navigator.clipboard.writeText('🟢 CANCEL IN: ' + content + ' 🟢'), UI.SuccessMessage('Copied time!');
-    },
-    initCalculate: function (event) {
-        var serverDate = $('#serverDate').prop('textContent');
-        var serverTime = $('#serverTime').prop('textContent');
-        var arrival = $('.arrival').prop('value');
-        var exit = $('.exit').prop('value');
-        var duration = $('.duration').prop('value');
-        return (i = this.calculateTimes(serverDate, serverTime, arrival, exit, duration)) ? ($('.vis.moveable.cancel.content-border').append('<div><table width="100%"><tbody><tr><th><strong>NOBLE ARRIVING:</strong></th><th><strong>COMMAND SENT:</strong></th><th><strong>CANCEL TIME:</strong></th><th><strong>CANCEL AT:</strong></th><th style="text-align: center"><strong>SEND:</strong></th></tr><tr><td style="text-align: center; font-size: larger"><strong>' + arrival + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + exit + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + i.cancel + '</strong></td><td style="text-align: center; font-size: larger"><strong>' + i.timer + '</strong></td><td class="align_right"><input type="button" class="btn" style="margin: 4px" onclick="content.extractTime(this)" value="COPY"></td></tr></tbody></table></div>'), Timing.tickHandlers.timers.init(), Timing.tickHandlers.timers.handleTimerEnd = function (event) { this.closest('div').remove(); }) : UI.ErrorMessage('No matches found');
-    },
-    saveAction: function (event) {
-        const values = {};
-        $(this).closest('div').find('input').each(function (i) {
-            values[this.className] = this.value;
+    times: function(event) {
+        let $pbElement = $(event.target).closest('tr'); 
+        $pbElement.attr('class')?.includes('command-row') && $pbElement.children(0e+0).css('background', '#ffff5b') && $.get($pbElement.find('a[href*=info_command]').attr('href') || ``).then(function(xhr) {
+            let $pbTimes = $(xhr).find('td#content_value table tr'), description = $(event.target).closest('div').attr('id') != 'commands_outgoings' && [
+                0x4,
+                0x5,
+                0x1,
+            ] || [
+                0x5,
+                0x6,
+                0x0,
+            ];
+            let timestamp = new Date($pbTimes[description[1]].cells[1].textContent.replace(/\s+/g, '\x20').replace(/(\w+). (\d+), (\d+) (\d+:\d+:\d+)/, (regex, $1, $2, $3, $4) => `${$3}-${language[$1]}-${$2} ${$4}`)), duration = ScriptAPI.convertHoursToSeconds($pbTimes[description[0]].cells[1].textContent) * 1000, diference = new Date(timestamp - duration);
+            return description[2] && $('#ScriptAPI #snob-commands').val(ScriptAPI.convertToLocaleString(timestamp) || 0e+1) || $('#ScriptAPI #exit-commands').val(ScriptAPI.convertToLocaleString(diference) || 0e+2) && $('#ScriptAPI #time-commands').val(ScriptAPI.convertToTimeFormat(duration / 1000) || !NaN);
         });
-        return localStorage.setItem('cancelContent', JSON.stringify(values));
     },
-    closeScript: function(event) {
-        return document.querySelector('.vis.moveable.cancel').remove();
+    export: function(event) {
+        let $pbElement = $(event.target).closest('tr').children(0e+0)[2e+0].textContent;
+        return navigator.clipboard.writeText(`CANCELAR EM: 🚨 ` + $pbElement) && UI.SuccessMessage('Tempo exportado com sucesso!', 1000);
+    },
+    constructor: function(event) {
+        let $pbElement = $('.server_info, #ScriptAPI #options input').map((i, $pb) => i < 3e+0 && new Date(this.convertToDateTimeFormat(!i && `${$pb.children.serverDate.textContent} ${$pb.children.serverTime.textContent}` || $pb.value) || ``) || this.convertHoursToSeconds($pb.value) * 1000);     
+        let duration = ($pbElement[1] - $pbElement[2]) / 2e+0;
+        $('#ScriptAPI #combinations-found').append(`<tr><td>${this.convertToLocaleString($pbElement[1])}</td><td>${this.convertToLocaleString($pbElement[2])}</td><td>${this.convertToTimeFormat(($pbElement[3] - duration) / 1e+3)}</td><td><span class="timer">${this.convertToTimeFormat(($pbElement[1] - duration - $pbElement[0]) / 1e+3)}<span></td><td><button class="btn" onclick="return ScriptAPI.export(event);">EXPORTAR</button></td><td><img src="/graphic/delete_14.png" class="float_right" onclick="return this.closest('tr').remove();"></td></tr>`)
+        return Timing.tickHandlers.timers.init();
+    },
+    convertToLocaleString: function(event) {
+        return event.toLocaleString(`pt-BR`).replace(`,`, ``);
+    },
+    convertToDateTimeFormat: function (event) {
+        return event.replace(/(\d+)\/(\d+)\/(\d+) (.*)/, '$3-$2-$1 $4');
+    },
+    convertHoursToSeconds: function(event) {
+        return event.split(':').map(Number).reduce((acc, $pb, i) => acc + (!i ? $pb * 3600 : i == 1 ? $pb * 60 : $pb), 0);
+    },
+    convertToTimeFormat: function (event) {
+        let $pbHours = ~~(event / 3600), $pbMinutes = ~~(event % 3600 / 60), $pbSeconds = ~~(event % 60);
+        return ('' + $pbHours).padStart(2, '0') + ':' + ('' + $pbMinutes).padStart(2, '0') + ':' + ('' + $pbSeconds).padStart(2, '0');
     },
 };
-$(window.TribalWars).on('global_tick', function (event) {
-    event = $('#ds_body > div.vis.moveable.cancel.content-border.ui-draggable.ui-draggable-handle > div:nth-child(3) > table > tbody > tr:nth-child(2) > td:nth-child(4) > strong > span'), event.prop('textContent') === '0:00:10' && TribalWars.playSound('chat');
-});
-$('.vis.moveable.cancel.content-border').on('input', content.saveAction);
+window.ScriptAPI.init();
