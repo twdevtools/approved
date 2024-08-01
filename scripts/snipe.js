@@ -22,15 +22,15 @@ this.ScriptAPI = {
                 <tbody>
                     <tr>
                         <th>HORA DE CHEGADA NOBRE:</th>
-                        <td data-title="teste"><input id="snob-commands" type="text" placeholder="DD/MM/AAAA 00:00:00" value="01/08/2024 15:38:00"></td>                    
+                        <td data-title="teste"><input id="snob-commands" type="text" placeholder="DD/MM/AAAA 00:00:00"></td>                    
                     </tr>
                     <tr>
                         <th>HORA DE SAÍDA COMANDO:</th>
-                        <td><input id="exit-commands" type="text" placeholder="DD/MM/AAAA 00:00:00" value="01/08/2024 15:28:00"></td>                       
+                        <td><input id="exit-commands" type="text" placeholder="DD/MM/AAAA 00:00:00"></td>                       
                     </tr>
                     <tr>
                         <th>TEMPO DO COMANDO:</th>
-                        <td><input id="time-commands" type="text" placeholder="00:00:00" value="01:00:00"></td>   
+                        <td><input id="time-commands" type="text" placeholder="00:00:00"></td>   
                     </tr>
                     <tr>
                         <td colspan="100">
