@@ -14,7 +14,7 @@ this.ScriptAPI = {
             "b575d8d37fffa782cfa3592d1cfc65da", 
             "a0bccd9315fa3e38aef93f34cd116aa9",
         ].reduce((acc, $pb, i) => (acc[lang[$pb].toLowerCase(null)] = `${i+1}`.padStart(2, '0') || !void 0) && acc, {});
-        let scriptHTML = `<div id="ScriptAPI" class="vis content-border" style="position: fixed; border-radius: 8px; top: 30%; left: 20%; width: 650px;">
+        let scriptHTML = `<div id="ScriptAPI" class="vis content-border" style="position: fixed; border-radius: 8px; top: 30%; left: 20%;">
             <style>#ScriptAPI th, #ScriptAPI h4 {background-color: #202225 !important;background-image: none;font-weight: normal; text-align: center;color: #ffffdf;}#ScriptAPI input[type="text"] {font-size: 13pt; background: none; border: none;color: #ffffdf;}#ScriptAPI button {background-image: linear-gradient(#6e7178 0%, #36393f 30%, #202225 80%, black 100%);}#ScriptAPI, #ScriptAPI td {background: #36393f !important;color: #ffffdf;}#ScriptAPI a {color: #ae441c;}</style>
             <a href="#" onclick="return $('#ScriptAPI').remove()" style="position: absolute; font-size: 20px; top: 5px; right: 10px; z-index: 1;">X</a>
             <h4 style="border-radius: 8px 8px 0px 0px; font-size: 16px; padding: 6px;">SNIPE CANCELAMENTO</h4>
@@ -35,15 +35,15 @@ this.ScriptAPI = {
                     <tr>
                         <td colspan="100">
                             <div id="commands-list" style="overflow: auto; max-height: 150px;">
-                            <style>#ScriptAPI #combinations-found td {text-align: center;font-family: monospace;font-weight: bold;font-size: larger;}#ScriptAPI #combinations-found td:has(button) {padding: 2px 0px 4px 0px;}#ScriptAPI #combinations-found button {font-size: 9px !important;font-family: monospace;}#ScriptAPI #combinations-found img {margin-right: 2px;cursor: pointer;}</style>
+                            <style>#ScriptAPI #combinations-found td:nth-child(1) {color: #c9c922;}#ScriptAPI #combinations-found td:nth-child(2) {color: #53853b;}#ScriptAPI #combinations-found td:nth-child(4) {color: #c14848;}#ScriptAPI #combinations-found td {text-align: center;font-family: monospace;font-weight: bold;font-size: larger;}#ScriptAPI #combinations-found td:has(button) {padding: 2px 0px 4px 0px;}#ScriptAPI #combinations-found button {font-size: 9px !important;font-family: monospace;}#ScriptAPI #combinations-found img {margin: 2px;cursor: pointer;}</style>
                                 <table style="border-spacing: 0px; width: 100%;">
                                     <thead style="position: sticky; top: 0px; z-index: 1;">
                                         <tr>
-                                            <th>CHEGADA NOBRE:</th>
-                                            <th>SAÍDA COMANDO:</th>
-                                            <th>TEMPO CANCELAR:</th>
-                                            <th>CANCELAR EM:</th>
-                                            <th>#</th>
+                                            <th width="160px;">CHEGADA NOBRE:</th>
+                                            <th width="160px;">SAÍDA COMANDO:</th>
+                                            <th width="125px;">TEMPO CANCELAR:</th>
+                                            <th width="100px;">CANCELAR EM:</th>
+                                            <th width="50px;">#</th>
                                             <th>#</th>
                                         </tr>
                                     </thead>
@@ -54,7 +54,7 @@ this.ScriptAPI = {
                     </tr>
                 </tbody>
             </table>
-            <div id="buttons" style="margin: 2px 0px 4px 2px;"><button class="btn" onclick="ScriptAPI.constructor(event);">CALCULAR TEMPOS</button></div>
+            <div style="margin: 2px 0px 4px 2px;"><button class="btn" onclick="ScriptAPI.constructor(event);">CALCULAR TEMPOS</button></div>
         </div>`
         Timing.tickHandlers.timers.handleTimerEnd = $pb => $pb.target.closest('tr').remove();
         !mobiledevice || $('#ScriptAPI').css(
