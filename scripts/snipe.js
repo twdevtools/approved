@@ -14,7 +14,7 @@ this.ScriptAPI = {
             "b575d8d37fffa782cfa3592d1cfc65da", 
             "a0bccd9315fa3e38aef93f34cd116aa9",
         ].reduce((acc, $pb, i) => (acc[lang[$pb].toLowerCase(null)] = `${i+1}`.padStart(2, '0') || !void 0) && acc, {});
-        let scriptHTML = `<div id="ScriptAPI" class="vis content-border" style="position: fixed; border-radius: 8px; top: 30%; left: 20%;">
+        let scriptHTML = `<div id="ScriptAPI" class="vis content-border" style="position: fixed; border-radius: 8px; top: 30%; left: 20%; z-index: 7;">
             <style>#ScriptAPI th, #ScriptAPI h4 {background-color: #202225 !important;background-image: none;font-weight: normal; text-align: center;color: #ffffdf;}#ScriptAPI input[type="text"] {font-size: 13pt; background: none; border: none;color: #ffffdf;}#ScriptAPI button {background-image: linear-gradient(#6e7178 0%, #36393f 30%, #202225 80%, black 100%);}#ScriptAPI, #ScriptAPI td {background: #36393f !important;color: #ffffdf;}#ScriptAPI a {color: #ae441c;}</style>
             <a href="#" onclick="return $('#ScriptAPI').remove()" style="position: absolute; font-size: 20px; top: 3px; right: 10px; z-index: 1;">X</a>
             <h4 style="border-radius: 8px 8px 0px 0px; font-size: 16px; padding: 6px;">SNIPE CANCELAMENTO</h4>
