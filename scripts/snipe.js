@@ -1,26 +1,33 @@
-/*
-    * SCRIPT NAME: SNIPE CANCEL
-    * VERSION: v2.0
-    * LAST UPDATED: 2024-11-26
-    * AUTHOR: K I N G S
-    * AUTHOR CONTACT: +55 48-98824-2773 
-    * APPROVED DATE: 2023-10-25
-*/
-
-/************************************************************************************
-/////////////////////////////////////////////////////////////////////////////////////
-THIS SCRIPT IS NOT AUTHORIZED FOR MODIFICATION WITHOUT AUTHORIZATION FROM THE AUTHOR.
-/////////////////////////////////////////////////////////////////////////////////////
-************************************************************************************/
+/***************************************************************
+ * SCRIPT INFORMATION
+ * 
+ * SCRIPT NAME: Snipe Cancel
+ * VERSION: v2.0
+ * LAST UPDATED: November 26, 2024
+ * AUTHOR: K I N G S
+ * AUTHOR CONTACT: +55 48-98824-2773
+ * APPROVED DATE: October 25, 2023
+ * 
+ * WARNING: UNAUTHORIZED MODIFICATION PROHIBITED
+ * 
+ * This script is protected and may not be modified, distributed, 
+ * or reused without explicit prior authorization from the original author.
+ * Any unauthorized changes to this code are strictly prohibited and may 
+ * result in violations of intellectual property laws.
+ * 
+ * For support, permissions, inquiries, or authorization requests, 
+ * please contact the author directly using the provided contact details.
+ ***************************************************************/
 
 $(`<style>
     #fa_register_div * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        right: 0px;
     }
 
-    #fa_register_div.fa_div {
+    #fa_register_div {
         position: fixed;
         top: 20%;
         left: 30%;
@@ -72,10 +79,6 @@ $(`<style>
         outline: none;
     }
 
-    #fa_register_div input::-webkit-datetime-edit {
-        color: white;
-    }
-
     #fa_register_div input:hover {
         background-color: #353b41;
     }
@@ -101,10 +104,6 @@ $(`<style>
 
     #fa_register_div tbody tr:nth-child(odd) {
         background-color: #353b41;
-    }
-
-    #fa_register_div tbody tr:nth-child(even) {
-        background-color: #2b2d31;
     }
 
     #fa_register_div button {
@@ -148,14 +147,14 @@ $(`<style>
         animation: continuous 5s linear(0 0%, 0.22 2.1%, 0.86 6.5%, 1.11 8.6%, 1.3 10.7%, 1.35 11.8%, 1.37 12.9%, 1.37 13.7%, 1.36 14.5%, 1.32 16.2%, 1.03 21.8%, 0.94 24%, 0.89 25.9%, 0.88 26.85%, 0.87 27.8%, 0.87 29.25%, 0.88 30.7%, 0.91 32.4%, 0.98 36.4%, 1.01 38.3%, 1.04 40.5%, 1.05 42.7%, 1.05 44.1%, 1.04 45.7%, 1 53.3%, 0.99 55.4%, 0.98 57.5%, 0.99 60.7%, 1 68.1%, 1.01 72.2%, 1 86.7%, 1 100%) infinite;
     }
 
-    #fa_register_div .fa_color {
+    #fa_register_div .fa_color-icon {
         color: #ff0000;
     }
 
-    .fa_close {
+    .fa_close-icon {
         position: absolute;
         top: -10px;
-        right: -10px;
+        right: -10px !important;
         background-color: #ff5f5f;
         color: #fff;
         border: none;
@@ -167,84 +166,66 @@ $(`<style>
         justify-content: center;
         cursor: pointer;
         box-shadow: rgba(0, 0, 0, 0.5) 1px 1px 5px;
-        transition: background-color 0.3s ease, transform 0.2s ease;
+        transition: background-color 0.3s ease;
     }
 
-    .fa_close i {
+    .fa_close-icon i {
         font-size: 1.2em;
     }
 
-    .fa_overflow {
-        overflow: auto;
-        max-height: 150px;
-    }
-
-    .fa_close:hover {
+    .fa_close-icon:hover {
         background-color: #ff3030;
-        transform: scale(1.1);
-    }
-
-    #fa_register_div ::-webkit-scrollbar {
-        width: 14px;
-    }
-
-    #fa_register_div ::-webkit-scrollbar-track {
-        background-color: #40444b;
-    }
-
-    #fa_register_div ::-webkit-scrollbar-thumb {
-        background-color: #888;
-        border: 3px solid #40444b;
-        border-radius: 10px;
-    }
-
-    #fa_register_div ::-webkit-scrollbar-corner {
-        background-color: #40444b;
     }
 
     #fa_register_div [data-title] {
-        position: relative; 
+        position: relative;
     }
 
     #fa_register_div [data-title]::after {
         content: attr(data-title);
         position: absolute;
-        top: -3%;
-        left: 123%;
-        transform: translateX(-50%) scale(0.9);
         background-color: #333;
         color: #f5f5f5;
         padding: 8px 12px;
         border-radius: 8px;
         font-size: 0.85em;
-        font-weight: 500;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.8);
+        visibility: hidden;
+        opacity: 0;
         white-space: pre-wrap;
-        visibility: hidden;
-        opacity: 0;
-        z-index: 1000;
-        transition: opacity 0.3s ease, transform 0.3s ease;
+        z-index: 100;
+        transition: all 0.3s;
+        font-family: sans-serif;
+        font-weight: normal;
     }
 
-    #fa_register_div [data-title]::before {
-        content: '';
-        position: absolute;
-        bottom: 27%;
-        left: 103%;
-        transform: translateX(-50%);
-        border-width: 9px;
-        border-style: solid;
-        border-color: transparent transparent transparent #333;
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity 0.3s ease; 
-    }
-
-    #fa_register_div [data-title]:hover::after,
-    #fa_register_div [data-title]:hover::before {
+    #fa_register_div [data-title]:hover::after {
         visibility: visible;
         opacity: 1;
-        transform: translateX(-50%) scale(1);
+    }
+
+    #fa_register_div [data-title].right:after {
+        top: 50%;
+        left: 100%;
+        transform: translateY(-50%) translateX(10px);
+    }
+
+    #fa_register_div [data-title].left::after {
+        top: 50%;
+        right: 100%;
+        transform: translateY(-50%) translateX(-10px);
+    }
+
+    #fa_register_div [data-title].top::after {
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-10px);
+    }
+
+    #fa_register_div [data-title].bottom::after {
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
     }
 
     @keyframes in {
@@ -276,29 +257,29 @@ $(`<style>
         }
     }
 </style>
-<div id="fa_register_div" class="fa_div">
+<div id="fa_register_div">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <div class="fa_close" onclick="return this.parentElement.remove(undefined);">
+    <div class="fa_close-icon" onclick="return this.parentElement.remove(undefined);">
         <i class="fa-solid fa-xmark fa-lg"></i>
     </div>
     <h3>CANCEL SNIPE</h3>
-    <div data-title="DATE/TIME THAT THE NOBLE WILL ARRIVE\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED">
+    <div data-title="DATE/TIME THAT THE NOBLE WILL ARRIVE\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED" class="right">
         <input type="datetime-local" max="9999-12-31T23:59" step="1">
     </div>
-    <div data-title="DATE/TIME OF THE COMMAND YOU SENT TO SNIP\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED">
+    <div data-title="DATE/TIME OF THE COMMAND YOU SENT TO SNIP\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED" class="right">
         <input type="datetime-local" max="9999-12-31T23:59" step="1">
     </div>
-    <div data-title="DURATION OF THE COMMAND YOU SENT\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED">
+    <div data-title="DURATION OF THE COMMAND YOU SENT\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED" class="right">
         <input type="time" step="1">
     </div>
-    <div class="fa_overflow">
+    <div>
         <table>
             <thead>
                 <tr>
-                    <th><i class="fa-solid fa-ban fa-lg"></i></th>
-                    <th><i class="fa-solid fa-clock fa-lg"></i></th>
-                    <th><i class="fa-solid fa-file-export fa-lg"></i></th>
-                    <th><i class="fa-solid fa-trash-can fa-lg"></i></th>
+                    <th data-title="DURATION OF COMMAND TO CANCEL" class="top"><i class="fa-solid fa-ban fa-lg"></i></th>
+                    <th data-title="TIME LEFT TO CANCEL THE COMMAND" class="top"><i class="fa-solid fa-clock fa-lg"></i></th>
+                    <th data-title="EXPORT THE DURATION TO CANCEL" class="top"><i class="fa-solid fa-file-export fa-lg"></i></th>
+                    <th data-title="DELETE THE COMMAND" class="top"><i class="fa-solid fa-trash-can fa-lg"></i></th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -311,7 +292,7 @@ $(`<style>
     <div id="fa_animation">
         <span>
             DEVELOPED BY:
-            <i class="fa_color">K I N G S</i>
+            <i class="fa_color-icon">K I N G S</i>
             🔥
         </span>
     </div>
@@ -347,7 +328,7 @@ this.ScriptAPI = {
         );
     },
     fn_global04(i) {
-        $('#fa_register_div tbody').append(function(index) { 
+        $('#fa_register_div tbody').html(function(index) { 
             const i = $('#fa_register_div input').map( function(i) { 
                 return (!i || i == 1)&&ScriptAPI.fn_global09.call(this.value) || ScriptAPI.fn_global07.call(this.value) * 1e3;
             });
