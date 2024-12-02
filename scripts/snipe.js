@@ -192,16 +192,16 @@ let stringHTML = `
         content: attr(data-title);
         position: absolute;
         background-color: #333;
+        opacity: 0;
+        z-index: 100;
         color: #f5f5f5;
         padding: 8px 12px;
         border-radius: 8px;
         font-size: 0.85em;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.8);
-        visibility: hidden;
-        opacity: 0;
-        white-space: pre-wrap;
-        z-index: 100;
         transition: all 0.3s;
+        visibility: hidden;
+        white-space: pre-wrap;
         font-family: sans-serif;
         font-weight: normal;
     }
@@ -209,6 +209,7 @@ let stringHTML = `
     #fa_register_div [data-title]:hover::after {
         visibility: visible;
         opacity: 1;
+        transition-delay: 0.5s;
     }
 
     #fa_register_div [data-title].right:after {
@@ -353,6 +354,7 @@ this.Functions = {
                 - The content is filtered using the provided regular expression (`regex`), 
                 - returning the text of the first matching element.
             */
+           
             return $(responseData.toString()).find('#content_value td:nth-child(2)').filter((i, el) => regex.test(el.textContent)).eq(0).text();
         },
         async init({ target } /* Destructures the event received from the document listener */) {
@@ -399,12 +401,9 @@ this.Functions = {
 
                     /* Fill the remaining fields with calculated durations and timestamps */
 
-                    inputElement.slice(1).each((i, element) => {
-                        let duration = Functions.convertTimeToSeconds(this.filterResponseContent(response, /^\d+:/)) * 1000;
-                        $(element).val(
-                            i && Functions.formatTimeToHHMMSS(duration / 1000) || Functions.formatDateToISOString(Functions.dateToMilliseconds(this.applyLanguageFormat(this.filterResponseContent(response, /\S{3}\./)) + '.000Z') - duration),
-                        );
-                    });
+                    let duration = Functions.convertTimeToSeconds(this.filterResponseContent(response, /^\d+:/)) * 1000;
+                    inputElement[1].value = Functions.formatDateToISOString(Functions.dateToMilliseconds(this.applyLanguageFormat(this.filterResponseContent(response, /\S{3}\./)) + '.000Z') - duration);
+                    inputElement[2].value = Functions.formatTimeToHHMMSS(duration / 1000);
                 };
 
             };
