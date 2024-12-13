@@ -299,9 +299,7 @@ let stringHTML = `
     </div>
 </div>`
 
-$(stringHTML).appendTo(
-    '.desktop.scrollableMenu.has-pa').eq(2).draggable(
-);
+$(stringHTML).appendTo(document.body).eq(2).draggable();
 
 // Main script functions for data manipulation, time handling, and DOM element interaction.
 
