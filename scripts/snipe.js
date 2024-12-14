@@ -25,7 +25,7 @@
 
 /* Modal for managing command cancellations with draggable functionality, input fields, a dynamic table, and action buttons. */
 
-let stringHTML = `
+stringHTML = `
 <style>
     #fa_register_div * {
         margin: 0;
