@@ -287,7 +287,12 @@ $(`
     </div>
 `).appendTo('body');
 
-$('#fa_register_script').draggable();
+$('#fa_register_script').draggable() && $("#fa_box_template").sortable({
+    cursor: 'move',
+    update: function() {
+        ScriptFunctions.setStorage();
+    },
+});
 
 this.ScriptFunctions = {
     init() {
@@ -299,7 +304,7 @@ this.ScriptFunctions = {
 
         if (mobiledevice) {
             $('#fa_register_script').css({width: 'auto', top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
-        }
+        };
 
         this.getStorage();
         $('#commands_incomings, #incomings_table, #fa_box_template').on('click', event => {
@@ -351,20 +356,20 @@ this.ScriptFunctions = {
 
         /*
             * - Retrieves the inner HTML of `#fa_box_template`.
-            * - Stores the HTML as a JSON string in local storage under the key 'commandRenamer'.
+            * - Stores the HTML as a JSON string in local storage under the key 'renameIncomings'.
         */
 
         let innerHTML = $('#fa_box_template').html();
-        localStorage.setItem('commandRenamer', JSON.stringify(innerHTML));
+        localStorage.setItem('renameIncomings', JSON.stringify(innerHTML));
     },
     getStorage() {
 
         /*
-            * - Parses the stored `commandRenamer` data from local storage.
+            * - Parses the stored `renameIncomings` data from local storage.
             * - If data exists, it sets the HTML of `#fa_box_template` and inserts the templates.
         */
 
-        let storage = JSON.parse(localStorage.commandRenamer || null);
+        let storage = JSON.parse(localStorage.renameIncomings || null);
         if (storage) {
             $('#fa_box_template').html(storage);
             this.insertTemplate();
