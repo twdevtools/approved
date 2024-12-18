@@ -32,6 +32,7 @@ $(`
             position: fixed;
             top: 20%;
             left: 40%;
+            width: 300px;
             background-color: #202225;
             border-radius: 8px;
             padding: 10px;
