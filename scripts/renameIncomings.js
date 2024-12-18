@@ -226,7 +226,7 @@ $(`
             }
 
             100% {
-                transform: translateX(13%);
+                transform: translateX(15%);
             }
         }
 
@@ -296,6 +296,10 @@ this.ScriptFunctions = {
             * - Removes the closest parent div when an `<i>` element is clicked and updates storage.
             * - Simulates renaming a command row when a `<button>` is clicked.
         */
+
+        if (mobiledevice) {
+            $('#fa_register_script').css({top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
+        }
 
         this.getStorage();
         $('#commands_incomings, #incomings_table, #fa_box_template').on('click', event => {
