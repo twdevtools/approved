@@ -3,10 +3,10 @@
     * 
     * SCRIPT NAME: RENAME INCOMINGS
     * VERSION: v1.0
-    * LAST UPDATED: December 17, 2024
+    * LAST UPDATED: December 18, 2024
     * AUTHOR: K I N G S
     * AUTHOR CONTACT: +55 48-98824-2773
-    * APPROVED ON: -----
+    * APPROVED ON: December 18, 2024
     * 
     * WARNING: UNAUTHORIZED MODIFICATION IS STRICTLY FORBIDDEN
     * 
@@ -35,7 +35,6 @@ $(`
             background-color: #202225;
             border-radius: 8px;
             padding: 10px;
-            width: 400px;
             z-index: 100;
             animation: in 0.4s ease-out, on 2s infinite ease-in-out;
         }
@@ -226,7 +225,7 @@ $(`
             }
 
             100% {
-                transform: translateX(15%);
+                transform: translateX(10%);
             }
         }
 
