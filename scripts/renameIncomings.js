@@ -298,7 +298,7 @@ this.ScriptFunctions = {
         */
 
         if (mobiledevice) {
-            $('#fa_register_script').css({top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
+            $('#fa_register_script').css({width: 'auto', top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
         }
 
         this.getStorage();
