@@ -37,6 +37,7 @@ $(`
             padding: 10px;
             width: 400px;
             z-index: 100;
+            animation: in 0.4s ease-out, on 2s infinite ease-in-out;
         }
 
         #fa_register_script ::-webkit-scrollbar {
@@ -183,6 +184,7 @@ $(`
             right: -10px;
             background-color: #ff5f5f;
             color: #fff;
+            font-size: 15px;
             border: none;
             border-radius: 50%;
             width: 30px;
@@ -197,9 +199,62 @@ $(`
         .fa_box_close:hover, #fa_box_template i:hover {
             background-color: #ff3030;
         }
+
+        #fa_animation {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            padding: 10px 0;
+            width: 100%;
+            font-size: 1.3em;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 10px;
+            position: relative;
+            font-style: italic;
+        }
+
+        #fa_animation span {
+            display: inline-block;
+            white-space: nowrap;
+            padding-right: 100%;
+            animation: continuous 5s linear(0 0%, 0.22 2.1%, 0.86 6.5%, 1.11 8.6%, 1.3 10.7%, 1.35 11.8%, 1.37 12.9%, 1.37 13.7%, 1.36 14.5%, 1.32 16.2%, 1.03 21.8%, 0.94 24%, 0.89 25.9%, 0.88 26.85%, 0.87 27.8%, 0.87 29.25%, 0.88 30.7%, 0.91 32.4%, 0.98 36.4%, 1.01 38.3%, 1.04 40.5%, 1.05 42.7%, 1.05 44.1%, 1.04 45.7%, 1 53.3%, 0.99 55.4%, 0.98 57.5%, 0.99 60.7%, 1 68.1%, 1.01 72.2%, 1 86.7%, 1 100%) infinite;
+        }
+
+        @keyframes continuous {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(13%);
+            }
+        }
+
+        @keyframes in {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes on {
+
+            0%, 100% {
+                box-shadow: 0 0 10px 2px rgba(0, 123, 255, 0.8);
+            }
+
+            50% {
+                box-shadow: 0 0 20px 6px rgba(0, 123, 255, 0.5);
+            }
+        }
     </style>
     <div id="fa_register_script" class="fa_flex fa_flex-direction-column">
-        <div class="fa_box_close" onclick="this.parentElement.remove();">
+        <div class="fa_box_close" onclick="return this.parentElement.remove();">
             <i class="fa-solid fa-xmark"></i>
         </div>
         <div class="fa_box_vis-base fa_flex fa_flex-direction-column">
@@ -211,24 +266,37 @@ $(`
                 <input type="color">
             </div>
             <div class="fa_flex">
-                <button onclick="ScriptFunctions.newTemplate();">
+                <button onclick="return ScriptFunctions.newTemplate();">
                     <i class="fa-solid fa-plus"></i>
                     CREATE TEMPLATE
                 </button>
-                <button onclick="ScriptFunctions.insertTemplate();">
+                <button onclick="return ScriptFunctions.insertTemplate();">
                     <i class="fa-solid fa-arrows-rotate"></i>
                     REFRESH
                 </button>
             </div>
         </div>
         <div id="fa_box_template" class="fa_box_vis-base fa_grid grid-repeat-3 fa_overflow"></div>
+        <div id="fa_animation">
+            <span>
+                DEVELOPED BY:
+                <i style="color: #ff0000;">K I N G S</i>
+                🔥
+            </span>
+        </div>
     </div>
-`).appendTo('html');
+`).appendTo('body');
 
 $('#fa_register_script').draggable();
 
 this.ScriptFunctions = {
     init() {
+
+        /*
+            * - Removes the closest parent div when an `<i>` element is clicked and updates storage.
+            * - Simulates renaming a command row when a `<button>` is clicked.
+        */
+
         this.getStorage();
         $('#commands_incomings, #incomings_table, #fa_box_template').on('click', event => {
             let target = event.target;
@@ -246,11 +314,25 @@ this.ScriptFunctions = {
         });
     },
     newTemplate() {
+
+        /*
+            * - Retrieves input values (template name and color) from `#fa_register_script`.
+            * - Appends a new template div to `#fa_box_template` containing a button with the specified color and name.
+            * - Updates storage after adding the new template.
+        */
+
         const [template, color] = $('#fa_register_script').find('input').map((i, input) => input.value);
         $('#fa_box_template').append(`<div><i class="fa-solid fa-xmark"></i><button style="background-color: ${color}">${template}</button></div>`);
         this.setStorage();
     },
     insertTemplate() {
+
+        /*
+            * - Collects all button templates from `#fa_box_template`.
+            * - Removes existing rows containing a `div` with a class starting with `fa_grid`.
+            * - Appends the collected templates after rows with class `command-row` or `nowrap` in target tables.
+        */
+
         const all_templates = $('#fa_box_template button').get().reduce((acc, button) => acc + button.outerHTML, ``);
         $('#commands_incomings, #incomings_table').find('tr:has(div[class^=fa_grid])').remove();
         $('#commands_incomings, #incomings_table').find('tr.command-row, tr.nowrap').after(`
@@ -262,10 +344,22 @@ this.ScriptFunctions = {
         `);
     },
     setStorage() {
+
+        /*
+            * - Retrieves the inner HTML of `#fa_box_template`.
+            * - Stores the HTML as a JSON string in local storage under the key 'commandRenamer'.
+        */
+
         let innerHTML = $('#fa_box_template').html();
         localStorage.setItem('commandRenamer', JSON.stringify(innerHTML));
     },
     getStorage() {
+
+        /*
+            * - Parses the stored `commandRenamer` data from local storage.
+            * - If data exists, it sets the HTML of `#fa_box_template` and inserts the templates.
+        */
+
         let storage = JSON.parse(localStorage.commandRenamer || null);
         if (storage) {
             $('#fa_box_template').html(storage);
