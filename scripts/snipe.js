@@ -327,6 +327,10 @@ this.Functions = {
         ].reduce(
             (acc, el, i) => (acc[lang[el].toLowerCase()] = `${i + 1}`.padStart(2, '0'), acc), {}
         );
+        
+        if (mobiledevice) {
+            $('#fa_register_div').css({top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
+        };
 
         Timing.tickHandlers.timers.handleTimerEnd = event => $(event.target).closest('tr').remove();
 
