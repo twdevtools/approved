@@ -1,379 +1,264 @@
-/*
-    * SCRIPT INFORMATION
-    * 
-    * SCRIPT NAME: RENAME INCOMINGS
-    * VERSION: v1.0
-    * LAST UPDATED: December 18, 2024
-    * AUTHOR: K I N G S
-    * AUTHOR CONTACT: +55 48-98824-2773
-    * APPROVED ON: December 18, 2024
-    * 
-    * WARNING: UNAUTHORIZED MODIFICATION IS STRICTLY FORBIDDEN
-    * 
-    * This script is protected by copyright and may not be altered, 
-    * distributed, or reused without explicit written consent from the 
-    * original author. Unauthorized modifications or redistribution 
-    * of this code may lead to legal consequences under intellectual 
-    * property laws.
-    * 
-    * For support, permission requests, or inquiries, please contact 
-    * the author directly using the contact information above.
-*/
+(() => {
+    const KEY = 'twRenamer';
+    const LEGACY = 'renameIncomings';
+    const TABLES = '#commands_incomings, #incomings_table';
+    const ROWS = 'tr.command-row, tr.nowrap';
+    const COLOR = '#8b2e2e';
+    const DELAY = 200;
+    const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
-$(`
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <style>
-        #fa_register_script * {
-            margin: 0px;
-            box-sizing: border-box;
+    const svg = d => `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const ICON = {
+        close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+        plus: svg('<path d="M12 5v14M5 12h14"/>'),
+        grip: svg('<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>'),
+        tag: svg('<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2"/>'),
+    };
+
+    $('#tr-panel, #tr-style').remove();
+    $(TABLES).find('tr.tr-row').remove();
+    $(document).off('.tr');
+
+    $(`<style id="tr-style">
+        #tr-panel {
+            --bg: #0d0e11; --surface: #15171c; --hover: #1b1e24; --line: #262930; --line-hi: #3a3e47;
+            --text: #d4d7dd; --muted: #6f7580; --accent: #a33b3b;
+            position: fixed; top: 18%; left: 40%; z-index: 12000; width: 310px;
+            background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .55);
+            font: 12px/1.4 ${FONT};
         }
-
-        #fa_register_script {
-            position: fixed;
-            top: 20%;
-            left: 40%;
-            width: 300px;
-            background-color: #202225;
-            border-radius: 8px;
-            padding: 10px;
-            z-index: 100;
-            animation: in 0.4s ease-out, on 2s infinite ease-in-out;
+        #tr-panel *, .tr-row * { box-sizing: border-box; margin: 0; }
+        #tr-panel svg { display: block; flex: none; }
+        #tr-panel .tr-head {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: move; user-select: none;
         }
-
-        #fa_register_script ::-webkit-scrollbar {
-            width: 16px; 
+        #tr-panel .tr-logo {
+            width: 28px; height: 28px; display: grid; place-items: center; flex: none;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; color: var(--accent);
         }
-
-        #fa_register_script ::-webkit-scrollbar-thumb {
-            background-color: #888; 
-            border: 4px solid #40444b; 
-            border-radius: 12px;
+        #tr-panel .tr-heading { flex: 1; min-width: 0; }
+        #tr-panel .tr-title { font-weight: 600; letter-spacing: .02em; }
+        #tr-panel .tr-sub { color: var(--muted); font-size: 11px; }
+        #tr-panel .tr-body { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+        #tr-panel .tr-form { display: flex; gap: 6px; }
+        #tr-panel input[type=text] {
+            flex: 1; min-width: 0; height: 30px; padding: 0 10px;
+            background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px; outline: none;
+            font: inherit;
         }
-
-        #fa_register_script ::-webkit-scrollbar-thumb:hover {
-            background-color: #a5a5a5; 
+        #tr-panel input[type=text]::placeholder { color: var(--muted); }
+        #tr-panel input[type=text]:focus { border-color: var(--accent); }
+        #tr-panel input[type=color] {
+            width: 30px; height: 30px; padding: 2px; flex: none;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
         }
-
-        #fa_register_script ::-webkit-scrollbar-corner {
-            background-color: #40444b; 
-            border-radius: 0px 0px 8px 0px;
+        #tr-panel .tr-btn {
+            height: 30px; padding: 0 10px; flex: none; display: inline-flex; align-items: center; gap: 6px;
+            background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+            font: inherit; font-weight: 600; cursor: pointer;
         }
-
-        #fa_register_script ::-webkit-scrollbar-track-piece {
-            background-color: #40444b;
-            border-radius: 0px 8px 0px 8px;
+        #tr-panel .tr-btn:hover { border-color: var(--line-hi); background: var(--hover); }
+        #tr-panel .tr-btn.tr-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        #tr-panel .tr-btn.tr-primary:hover { filter: brightness(1.12); }
+        #tr-panel .tr-close {
+            width: 24px; height: 24px; display: grid; place-items: center;
+            background: none; border: 0; border-radius: 4px; color: var(--muted); cursor: pointer;
         }
-
-        #fa_register_script input[type="text"] {
-            background-color: #40444b;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            color: #fff;
-            width: 100%;
-            transition: background-color 0.3s;
+        #tr-panel .tr-close:hover { color: var(--text); background: var(--surface); }
+        #tr-panel .tr-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); align-content: start; gap: 6px; min-height: 96px; max-height: 180px; overflow: auto;
+            padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
         }
-
-        #fa_register_script input[type="text"]:hover {
-            background-color: #353b41;
+        #tr-panel .tr-list::-webkit-scrollbar { width: 8px; }
+        #tr-panel .tr-list::-webkit-scrollbar-thumb { background: #2e323a; border-radius: 4px; }
+        #tr-panel .tr-empty { grid-column: 1 / -1; align-self: center; color: var(--muted); text-align: center; }
+        #tr-panel .tr-item { display: flex; align-items: center; min-width: 0; }
+        #tr-panel .tr-item .tr-chip { flex: 1; height: 26px; line-height: 26px; padding: 0 10px; border-radius: 0; }
+        #tr-panel .tr-item .tr-chip:hover { filter: brightness(1.15); }
+        #tr-panel.tr-busy .tr-list { opacity: .5; pointer-events: none; }
+        #tr-panel .tr-grip, #tr-panel .tr-remove {
+            height: 26px; padding: 0 5px; display: grid; place-items: center; border: 0;
+            background: rgba(0, 0, 0, .35); color: #fff;
         }
-
-        #fa_register_script input[type="color"] {
-            border: none;
-            width: 100px;
-            height: 31px;
-            border-radius: 4px;
-            cursor: pointer;
+        #tr-panel .tr-grip { border-radius: 4px 0 0 4px; color: var(--muted); cursor: grab; }
+        #tr-panel .tr-grip:hover { color: var(--text); }
+        #tr-panel .tr-grip:active, #tr-panel .ui-sortable-helper .tr-grip { cursor: grabbing; }
+        #tr-panel .tr-remove { border-radius: 0 4px 4px 0; cursor: pointer; }
+        #tr-panel .tr-grip svg, #tr-panel .tr-remove svg { width: 11px; height: 11px; }
+        #tr-panel .tr-remove:hover { background: var(--accent); }
+        #tr-panel .tr-foot { color: var(--muted); font-size: 11px; }
+        .tr-chip {
+            height: 22px; min-width: 0; padding: 0 8px; border: 0; border-radius: 4px;
+            font: 600 11px/22px ${FONT}; letter-spacing: .03em; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25);
         }
+        .tr-row .tr-chip:hover { filter: brightness(1.15); }
+        .tr-row td { padding: 3px 6px 6px !important; }
+        tr[style*="none"] + .tr-row { display: none; }
+        .tr-row .tr-bar { display: flex; flex-wrap: wrap; gap: 4px; }
+        .tr-row .tr-chip { max-width: 140px; }
+    </style>`).appendTo('head');
 
-        button {
-            background-color: rgba(14, 74, 138, 0.502);
-            color: #fff;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            width: 100%;
-            white-space: nowrap;
-            transition: transform 0.1s;
-        }
-
-        button:hover {
-            outline: 1px solid #fff;
-        }
-
-        button:active {
-            transform: scale(0.94);
-        }
-
-        .fa_flex {
-            display: flex;
-            gap: 10px;
-        }
-
-        .fa_grid {
-            display: grid;
-            gap: 10px;
-        }
-
-        .grid-repeat-3 {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .grid-repeat-5 {
-            grid-template-columns: repeat(5, 1fr);
-        }
-
-        .fa_overflow {
-            overflow: auto;
-            max-height: 150px;
-        }
-
-        .fa_flex-direction-column {
-            flex-direction: column;
-        }
-
-        .fa_box_vis-base {
-            padding: 10px;
-            background-color: #2b2d31;
-            border-radius: 8px;
-            outline: 1px solid #40444b;
-        }
-
-        .fa_box_input-icon {
-            position: relative;
-            width: 100%;
-        }
-
-        .fa_box_input-icon i {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            left: 10px;
-        }
-
-        .fa_box_input-icon input {
-            padding-left: 40px !important;
-        }
-
-        #fa_box_template button {
-            pointer-events: none;
-        }
-
-        #fa_box_template > div {
-            position: relative;
-        }
-
-        #fa_box_template i {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            padding: 4px;
-            font-size: 7px;
-            border-radius: 50%;
-            color: #fff;
-            cursor: pointer;
-            background-color: #ff5f5f;
-            transition: background-color 0.3s;
-        }
-
-        .fa_box_close {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background-color: #ff5f5f;
-            color: #fff;
-            font-size: 15px;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .fa_box_close:hover, #fa_box_template i:hover {
-            background-color: #ff3030;
-        }
-
-        #fa_animation {
-            font-family: 'Arial', sans-serif;
-            color: #fff;
-            padding: 10px 0;
-            width: 100%;
-            font-size: 1.3em;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 10px;
-            position: relative;
-            font-style: italic;
-        }
-
-        #fa_animation span {
-            display: inline-block;
-            white-space: nowrap;
-            padding-right: 100%;
-            animation: continuous 5s linear(0 0%, 0.22 2.1%, 0.86 6.5%, 1.11 8.6%, 1.3 10.7%, 1.35 11.8%, 1.37 12.9%, 1.37 13.7%, 1.36 14.5%, 1.32 16.2%, 1.03 21.8%, 0.94 24%, 0.89 25.9%, 0.88 26.85%, 0.87 27.8%, 0.87 29.25%, 0.88 30.7%, 0.91 32.4%, 0.98 36.4%, 1.01 38.3%, 1.04 40.5%, 1.05 42.7%, 1.05 44.1%, 1.04 45.7%, 1 53.3%, 0.99 55.4%, 0.98 57.5%, 0.99 60.7%, 1 68.1%, 1.01 72.2%, 1 86.7%, 1 100%) infinite;
-        }
-
-        @keyframes continuous {
-            0% {
-                transform: translateX(100%);
-            }
-
-            100% {
-                transform: translateX(10%);
-            }
-        }
-
-        @keyframes in {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes on {
-
-            0%, 100% {
-                box-shadow: 0 0 10px 2px rgba(0, 123, 255, 0.8);
-            }
-
-            50% {
-                box-shadow: 0 0 20px 6px rgba(0, 123, 255, 0.5);
-            }
-        }
-    </style>
-    <div id="fa_register_script" class="fa_flex fa_flex-direction-column">
-        <div class="fa_box_close" onclick="return this.parentElement.remove();">
-            <i class="fa-solid fa-xmark"></i>
-        </div>
-        <div class="fa_box_vis-base fa_flex fa_flex-direction-column">
-            <div class="fa_flex">
-                <div class="fa_box_input-icon">
-                    <i class="fa-solid fa-signature fa-lg"></i>
-                    <input type="text" placeholder="TEMPLATE NAME...">
-                </div>
-                <input type="color">
+    const $panel = $(`<div id="tr-panel">
+        <div class="tr-head">
+            <div class="tr-logo">${ICON.tag}</div>
+            <div class="tr-heading">
+                <div class="tr-title">Renomeador</div>
+                <div class="tr-sub">Marque comandos e clique numa tag</div>
             </div>
-            <div class="fa_flex">
-                <button onclick="return ScriptFunctions.newTemplate();">
-                    <i class="fa-solid fa-plus"></i>
-                    CREATE TEMPLATE
-                </button>
-                <button onclick="return ScriptFunctions.insertTemplate();">
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                    REFRESH
-                </button>
+            <button class="tr-close" title="Fechar">${ICON.close}</button>
+        </div>
+        <div class="tr-body">
+            <div class="tr-form">
+                <input type="text" maxlength="20" placeholder="Nome da tag">
+                <input type="color" value="${COLOR}" title="Cor da tag">
+                <button class="tr-btn tr-primary tr-add">${ICON.plus}Adicionar</button>
+            </div>
+            <div class="tr-list"></div>
+            <div class="tr-foot">
+                <span class="tr-count"></span>
             </div>
         </div>
-        <div id="fa_box_template" class="fa_box_vis-base fa_grid grid-repeat-3 fa_overflow"></div>
-        <div id="fa_animation">
-            <span>
-                DEVELOPED BY:
-                <i style="color: #ff0000;">K I N G S</i>
-                🔥
-            </span>
-        </div>
-    </div>
-`).appendTo('body');
+    </div>`).appendTo('body');
 
-$('#fa_register_script').draggable() && $("#fa_box_template").sortable({
-    cursor: 'move',
-    update: function() {
-        ScriptFunctions.setStorage();
-    },
-});
+    const $list = $panel.find('.tr-list');
+    const $name = $panel.find('input[type=text]');
+    const $color = $panel.find('input[type=color]');
 
-this.ScriptFunctions = {
-    init() {
+    const legacy = () => $('<div>').html(JSON.parse(localStorage[LEGACY] || '""')).find('button').get()
+        .map(btn => ({ name: $.trim(btn.textContent), color: btn.style.backgroundColor || COLOR }))
+        .filter(tag => tag.name);
 
-        /*
-            * - Removes the closest parent div when an `<i>` element is clicked and updates storage.
-            * - Simulates renaming a command row when a `<button>` is clicked.
-        */
+    const load = () => {
+        try {
+            return JSON.parse(localStorage[KEY] || 'null') || legacy();
+        } catch {
+            return [];
+        }
+    };
 
-        if (mobiledevice) {
-            $('#fa_register_script').css({top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
-        };
+    let tags = load();
 
-        this.getStorage();
-        $('#commands_incomings, #incomings_table, #fa_box_template').on('click', event => {
-            let target = event.target;
-            if (target.localName == 'i') {
-                target.closest('div').remove();
-                this.setStorage();
-            };
-            if (target.localName == 'button') {
-                event.preventDefault();
-                const command_row = $(target).parents(':eq(2)').prev();
-                command_row.find('a.rename-icon').trigger('click');
-                command_row.find('input[type=text]').val(target.textContent);
-                command_row.find('input[type=button]').trigger('click');
-            };
-        });
-    },
-    newTemplate() {
+    const save = () => localStorage.setItem(KEY, JSON.stringify(tags));
 
-        /*
-            * - Retrieves input values (template name and color) from `#fa_register_script`.
-            * - Appends a new template div to `#fa_box_template` containing a button with the specified color and name.
-            * - Updates storage after adding the new template.
-        */
+    const ink = color => {
+        const $probe = $('<i>').css('color', color).appendTo('body');
+        const [r, g, b] = $probe.css('color').match(/\d+/g).map(Number);
+        $probe.remove();
+        return r * .299 + g * .587 + b * .114 > 150 ? '#111' : '#fff';
+    };
 
-        const [template, color] = $('#fa_register_script').find('input').map((i, input) => input.value);
-        $('#fa_box_template').append(`<div><i class="fa-solid fa-xmark"></i><button style="background-color: ${color}">${template}</button></div>`);
-        this.setStorage();
-    },
-    insertTemplate() {
+    const chip = (tag, i) => $('<button class="tr-chip">')
+        .text(tag.name)
+        .attr({ 'data-i': i, title: tag.name })
+        .css({ background: tag.color, color: ink(tag.color) });
 
-        /*
-            * - Collects all button templates from `#fa_box_template`.
-            * - Removes existing rows containing a `div` with a class starting with `fa_grid`.
-            * - Appends the collected templates after rows with class `command-row` or `nowrap` in target tables.
-        */
+    const renderPanel = () => {
+        $panel.find('.tr-count').text(`${tags.length} tag${tags.length === 1 ? '' : 's'}`);
+        if (!tags.length) return $list.html('<span class="tr-empty">Nenhuma tag criada</span>');
+        $list.empty().append(tags.map((tag, i) => $('<div class="tr-item">').attr('data-i', i)
+            .append(`<span class="tr-grip" title="Arrastar">${ICON.grip}</span>`, chip(tag, i), `<button class="tr-remove" title="Remover">${ICON.close}</button>`)));
+    };
 
-        const all_templates = $('#fa_box_template button').get().reduce((acc, button) => acc + button.outerHTML, ``);
-        $('#commands_incomings, #incomings_table').find('tr:has(div[class^=fa_grid])').remove();
-        $('#commands_incomings, #incomings_table').find('tr.command-row, tr.nowrap').after(`
-            <tr>
-                <td colspan="100">
-                    <div class="fa_grid grid-repeat-5" style="padding: 10px;">${all_templates}</div>
-                </td>
-            </tr>
-        `);
-    },
-    setStorage() {
+    const renderRows = () => {
+        const $tables = $(TABLES);
+        $tables.find('tr.tr-row').remove();
+        if (!tags.length) return;
+        $tables.find(ROWS).each((_, row) => $('<tr class="tr-row"><td colspan="100"><div class="tr-bar"></div></td></tr>')
+            .insertAfter(row).find('.tr-bar').append(tags.map(chip)));
+    };
 
-        /*
-            * - Retrieves the inner HTML of `#fa_box_template`.
-            * - Stores the HTML as a JSON string in local storage under the key 'renameIncomings'.
-        */
+    const render = () => {
+        renderPanel();
+        renderRows();
+    };
 
-        let innerHTML = $('#fa_box_template').html();
-        localStorage.setItem('renameIncomings', JSON.stringify(innerHTML));
-    },
-    getStorage() {
+    const add = () => {
+        const name = $.trim($name.val()).replace(/[[\]]/g, '');
+        if (!name) return $name.trigger('focus');
+        if (tags.some(tag => tag.name === name)) return UI.InfoMessage(`A tag ${name} já existe`);
+        tags.push({ name, color: $color.val() });
+        $name.val('').trigger('focus');
+        save();
+        render();
+    };
 
-        /*
-            * - Parses the stored `renameIncomings` data from local storage.
-            * - If data exists, it sets the HTML of `#fa_box_template` and inserts the templates.
-        */
+    const wait = ms => new Promise(done => setTimeout(done, ms));
 
-        let storage = JSON.parse(localStorage.renameIncomings || null);
-        if (storage) {
-            $('#fa_box_template').html(storage);
-            this.insertTemplate();
-        };
-    },
-};
-ScriptFunctions.init();
+    const apply = ($row, i) => {
+        const tag = `[${tags[i].name}]`;
+        $row.find('a.rename-icon').first().trigger('click');
+        const $edit = $row.find('.quickedit-edit');
+        const $input = $edit.find('input[type=text]').first();
+        const $ok = $edit.find('input[type=button]').first();
+        const current = $.trim($input.val() || $row.find('.quickedit-label').first().text());
+        if (current.includes(tag)) {
+            $ok.trigger('click');
+            return false;
+        }
+        $input.val(`${current} ${tag}`.trim());
+        $ok.trigger('click');
+        return true;
+    };
+
+    const mass = async i => {
+        const $rows = $(TABLES).find(ROWS).filter((_, row) => $(row).find('input[type=checkbox]').is(':checked'));
+        if (!$rows.length) return UI.InfoMessage('Marque os comandos na tabela primeiro');
+        const $count = $panel.find('.tr-count');
+        const total = $rows.length;
+        let renamed = 0;
+        $panel.addClass('tr-busy');
+        for (const [n, row] of $rows.get().entries()) {
+            $count.text(`Aplicando ${n + 1}/${total}`);
+            if (apply($(row), i)) renamed++;
+            await wait(DELAY);
+        }
+        $panel.removeClass('tr-busy');
+        renderPanel();
+        UI.SuccessMessage(`${renamed} renomeado(s), ${total - renamed} já tinham a tag`);
+    };
+
+    const close = () => {
+        $panel.remove();
+        $('#tr-style').remove();
+        $(TABLES).find('tr.tr-row').remove();
+        $(document).off('.tr');
+    };
+
+    $panel.on('click', '.tr-close', close);
+    $panel.on('click', '.tr-add', add);
+    $name.on('keydown', e => {
+        if (e.key === 'Enter') add();
+    });
+    $list.on('click', '.tr-chip', e => mass($(e.currentTarget).data('i')));
+    $list.on('click', '.tr-remove', e => {
+        tags.splice($(e.currentTarget).parent().data('i'), 1);
+        save();
+        render();
+    });
+
+    $(document).on('click.tr', '.tr-row .tr-chip', e => {
+        e.preventDefault();
+        const $btn = $(e.currentTarget);
+        const i = $btn.data('i');
+        if (!apply($btn.closest('tr.tr-row').prev(), i)) UI.InfoMessage(`O comando já tem [${tags[i].name}]`);
+    });
+
+    if ($.fn.draggable) $panel.draggable({ handle: '.tr-head', cancel: '.tr-close', containment: 'window' });
+    if ($.fn.sortable) $list.sortable({
+        items: '.tr-item',
+        handle: '.tr-grip',
+        cursor: 'grabbing',
+        update: () => {
+            tags = $list.children('.tr-item').get().map(el => tags[$(el).data('i')]);
+            save();
+            render();
+        },
+    });
+
+    if (window.mobiledevice) $panel.css({ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' });
+
+    render();
+})();
