@@ -51,9 +51,13 @@
         #tr-panel input[type=text]::placeholder { color: var(--muted); }
         #tr-panel input[type=text]:focus { border-color: var(--accent); }
         #tr-panel input[type=color] {
-            width: 30px; height: 30px; padding: 2px; flex: none;
-            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+            width: 30px; height: 30px; padding: 0; flex: none;
+            background: none; border: 0; border-radius: 6px; cursor: pointer;
         }
+        #tr-panel input[type=color]:hover { filter: brightness(1.15); }
+        #tr-panel input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+        #tr-panel input[type=color]::-webkit-color-swatch { border: 0; border-radius: 6px; }
+        #tr-panel input[type=color]::-moz-color-swatch { border: 0; border-radius: 6px; }
         #tr-panel .tr-btn {
             height: 30px; padding: 0 10px; flex: none; display: inline-flex; align-items: center; gap: 6px;
             background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
