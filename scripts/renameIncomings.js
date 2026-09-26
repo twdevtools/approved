@@ -3,7 +3,7 @@
     const LEGACY = 'renameIncomings';
     const TABLES = '#commands_incomings, #incomings_table';
     const ROWS = 'tr.command-row, tr.nowrap';
-    const COLOR = '#8b2e2e';
+    const COLORS = ['#8b2e2e', '#b5602a', '#a8872b', '#3f7d3a', '#2f7a78', '#2f5d8f', '#6b4a93', '#5a5f69'];
     const DELAY = 200;
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
@@ -41,23 +41,31 @@
         #tr-panel .tr-heading { flex: 1; min-width: 0; }
         #tr-panel .tr-title { font-weight: 600; letter-spacing: .02em; }
         #tr-panel .tr-sub { color: var(--muted); font-size: 11px; }
-        #tr-panel .tr-body { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
-        #tr-panel .tr-form { display: flex; gap: 6px; }
+        #tr-panel .tr-body { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+        #tr-panel .tr-section { display: flex; flex-direction: column; gap: 8px; }
+        #tr-panel .tr-label {
+            display: flex; align-items: center; justify-content: space-between;
+            color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+        }
+        #tr-panel .tr-count { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+        #tr-panel .tr-field { display: flex; align-items: center; gap: 12px; }
+        #tr-panel .tr-caption { flex: none; color: var(--muted); font-size: 11px; white-space: nowrap; }
+        #tr-panel .tr-add { justify-content: center; }
+        #tr-panel .tr-divider { height: 1px; margin: 0 -12px; background: var(--line); }
         #tr-panel input[type=text] {
-            flex: 1; min-width: 0; height: 30px; padding: 0 10px;
+            width: 100%; height: 30px; padding: 0 10px;
             background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px; outline: none;
             font: inherit;
         }
         #tr-panel input[type=text]::placeholder { color: var(--muted); }
         #tr-panel input[type=text]:focus { border-color: var(--accent); }
-        #tr-panel input[type=color] {
-            width: 30px; height: 30px; padding: 0; flex: none;
-            background: none; border: 0; border-radius: 6px; cursor: pointer;
+        #tr-panel .tr-colors { flex: 1; display: grid; grid-template-columns: repeat(${COLORS.length}, 1fr); gap: 6px; padding: 2px; }
+        #tr-panel .tr-color {
+            height: 24px; padding: 0; border: 0; border-radius: 5px; cursor: pointer;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25);
         }
-        #tr-panel input[type=color]:hover { filter: brightness(1.15); }
-        #tr-panel input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
-        #tr-panel input[type=color]::-webkit-color-swatch { border: 0; border-radius: 6px; }
-        #tr-panel input[type=color]::-moz-color-swatch { border: 0; border-radius: 6px; }
+        #tr-panel .tr-color:hover { filter: brightness(1.15); }
+        #tr-panel .tr-color.tr-active { box-shadow: 0 0 0 1px var(--bg), 0 0 0 2px var(--text); }
         #tr-panel .tr-btn {
             height: 30px; padding: 0 10px; flex: none; display: inline-flex; align-items: center; gap: 6px;
             background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
@@ -76,7 +84,12 @@
             padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
         }
         #tr-panel .tr-list::-webkit-scrollbar { width: 8px; }
+        #tr-panel .tr-list::-webkit-scrollbar-track { background: transparent; }
         #tr-panel .tr-list::-webkit-scrollbar-thumb { background: #2e323a; border-radius: 4px; }
+        #tr-panel .tr-list::-webkit-scrollbar-thumb:hover { background: var(--line-hi); }
+        @supports not selector(::-webkit-scrollbar) {
+            #tr-panel .tr-list { scrollbar-width: thin; scrollbar-color: #2e323a transparent; }
+        }
         #tr-panel .tr-empty { grid-column: 1 / -1; align-self: center; color: var(--muted); text-align: center; }
         #tr-panel .tr-item { display: flex; align-items: center; min-width: 0; }
         #tr-panel .tr-item .tr-chip { flex: 1; height: 26px; line-height: 26px; padding: 0 10px; border-radius: 0; }
@@ -92,7 +105,6 @@
         #tr-panel .tr-remove { border-radius: 0 4px 4px 0; cursor: pointer; }
         #tr-panel .tr-grip svg, #tr-panel .tr-remove svg { width: 11px; height: 11px; }
         #tr-panel .tr-remove:hover { background: var(--accent); }
-        #tr-panel .tr-foot { color: var(--muted); font-size: 11px; }
         .tr-chip {
             height: 22px; min-width: 0; padding: 0 8px; border: 0; border-radius: 4px;
             font: 600 11px/22px ${FONT}; letter-spacing: .03em; text-align: center;
@@ -115,24 +127,31 @@
             <button class="tr-close" title="Fechar">${ICON.close}</button>
         </div>
         <div class="tr-body">
-            <div class="tr-form">
+            <div class="tr-section">
+                <div class="tr-label">Nova tag</div>
                 <input type="text" maxlength="20" placeholder="Nome da tag">
-                <input type="color" value="${COLOR}" title="Cor da tag">
-                <button class="tr-btn tr-primary tr-add">${ICON.plus}Adicionar</button>
+                <div class="tr-field">
+                    <span class="tr-caption">Escolha a cor</span>
+                    <div class="tr-colors">
+                        ${COLORS.map(c => `<button class="tr-color" data-color="${c}" style="background: ${c}"></button>`).join('')}
+                    </div>
+                </div>
+                <button class="tr-btn tr-primary tr-add">${ICON.plus}Adicionar tag</button>
             </div>
-            <div class="tr-list"></div>
-            <div class="tr-foot">
-                <span class="tr-count"></span>
+            <div class="tr-divider"></div>
+            <div class="tr-section">
+                <div class="tr-label">Suas tags <span class="tr-count"></span></div>
+                <div class="tr-list"></div>
             </div>
         </div>
     </div>`).appendTo('body');
 
     const $list = $panel.find('.tr-list');
     const $name = $panel.find('input[type=text]');
-    const $color = $panel.find('input[type=color]');
+    let color = COLORS[0];
 
     const legacy = () => $('<div>').html(JSON.parse(localStorage[LEGACY] || '""')).find('button').get()
-        .map(btn => ({ name: $.trim(btn.textContent), color: btn.style.backgroundColor || COLOR }))
+        .map(btn => ({ name: $.trim(btn.textContent), color: btn.style.backgroundColor || COLORS[0] }))
         .filter(tag => tag.name);
 
     const load = () => {
@@ -183,7 +202,7 @@
         const name = $.trim($name.val()).replace(/[[\]]/g, '');
         if (!name) return $name.trigger('focus');
         if (tags.some(tag => tag.name === name)) return UI.InfoMessage(`A tag ${name} já existe`);
-        tags.push({ name, color: $color.val() });
+        tags.push({ name, color });
         $name.val('').trigger('focus');
         save();
         render();
@@ -233,6 +252,11 @@
 
     $panel.on('click', '.tr-close', close);
     $panel.on('click', '.tr-add', add);
+    $panel.on('click', '.tr-color', e => {
+        color = $(e.currentTarget).data('color');
+        $panel.find('.tr-color').removeClass('tr-active');
+        $(e.currentTarget).addClass('tr-active');
+    });
     $name.on('keydown', e => {
         if (e.key === 'Enter') add();
     });
@@ -264,5 +288,6 @@
 
     if (window.mobiledevice) $panel.css({ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' });
 
+    $panel.find('.tr-color').first().addClass('tr-active');
     render();
 })();
