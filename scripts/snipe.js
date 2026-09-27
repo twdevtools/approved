@@ -1,510 +1,366 @@
-/*
-    * SCRIPT INFORMATION
-    * 
-    * SCRIPT NAME: Snipe Cancel
-    * VERSION: v2.0
-    * LAST UPDATED: November 26, 2024
-    * AUTHOR: K I N G S
-    * AUTHOR CONTACT: +55 48-98824-2773
-    * APPROVED ON: October 25, 2023
-    * 
-    * WARNING: UNAUTHORIZED MODIFICATION IS STRICTLY FORBIDDEN
-    * 
-    * This script is protected by copyright and may not be altered, 
-    * distributed, or reused without explicit written consent from the 
-    * original author. Unauthorized modifications or redistribution 
-    * of this code may lead to legal consequences under intellectual 
-    * property laws.
-    * 
-    * For support, permission requests, or inquiries, please contact 
-    * the author directly using the contact information above.
-*/
-
-
-
-
-/* Modal for managing command cancellations with draggable functionality, input fields, a dynamic table, and action buttons. */
-
-stringHTML = `
-<style>
-    #fa_register_div * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        right: 0px;
+(() => {
+    if (game_data.screen !== 'overview') {
+        UI.InfoMessage('Redirecionando para a visualização da aldeia...');
+        return location.href = `${game_data.link_base_pure}overview`;
     }
 
-    #fa_register_div {
-        position: fixed;
-        top: 20%;
-        left: 30%;
-        width: 300px;
-        background-color: #202225;
-        border-radius: 12px;
-        box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 10px;
-        border: 1px solid #40444b;
-        padding: 25px;
-        color: rgb(248, 239, 239);
-        display: flex;
-        flex-direction: column;
-        z-index: 100;
-        gap: 20px;
-    }
+    const ID = 'sc-panel';
+    const INCOMING = '#show_incoming_units, #commands_incomings';
+    const OUTGOING = '#show_outgoing_units, #commands_outgoings';
+    const CANCEL_LIMIT = 10 * 60 * 1000;
+    const TRAIN_GAP = 1000;
+    const RETURN_NEAR = 60 * 1000;
+    const TZ_STEP = 15 * 60 * 1000;
+    const TEST_KEY = 'twSnipeTest';
+    const RX_DURATION = /^\d+:\d{2}:\d{2}$/;
+    const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
-    #fa_register_div h3 {
-        background-color: #2b2d31;
-        padding: 10px 14px;
-        border-radius: 8px;
-        text-align: center;
-        color: #fff;
-    }
+    const svg = d => `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const ICON = {
+        close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+        target: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'),
+        flask: svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/>'),
+        refresh: svg('<path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/>'),
+    };
 
-    #fa_register_div div {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
+    $(`#${ID}, #${ID}-style`).remove();
+    $('tr.sc-mark').removeClass('sc-mark');
+    $(window).off('.sc');
+    clearInterval(window.scTimer);
 
-    #fa_register_div span {
-        font-size: 1.00em;
-        font-weight: bold;
-        color: #b5b5b5;
-    }
-
-    #fa_register_div input {
-        background-color: #40444b;
-        border: none;
-        padding: 8px;
-        border-radius: 8px;
-        color: white;
-        font-size: 1.4em;
-        transition: background-color 0.3s ease;
-    }
-
-    #fa_register_div input:focus {
-        background-color: #2b2d31;
-        outline: none;
-    }
-
-    #fa_register_div input:hover {
-        background-color: #353b41;
-    }
-
-    #fa_register_div table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9em;
-    }
-
-    #fa_register_div th,
-    #fa_register_div td {
-        padding: 8px;
-        text-align: center;
-        border: 1px solid #40444b;
-    }
-
-    #fa_register_div th {
-        background-color: #2b2d31 !important;
-        background-image: none;
-        color: white;
-    }
-
-    #fa_register_div tbody tr:nth-child(odd) {
-        background-color: #353b41;
-    }
-
-    #fa_register_div button {
-        background-color: #007BFF;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1em;
-        transition: background-color 0.3s;
-        width: 100%;
-    }
-
-    #fa_register_div button:hover {
-        background-color: #0056b3;
-    }
-
-    #fa_register_div {
-        animation: in 0.4s ease-out, on 2s infinite ease-in-out;
-    }
-
-    #fa_animation {
-        font-family: 'Arial', sans-serif;
-        font-size: 1.3em;
-        color: #fff;
-        background-color: #202225;
-        padding: 10px 0;
-        width: 100%;
-        overflow: hidden;
-        border-radius: 8px;
-        box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 10px;
-        position: relative;
-        font-style: italic;
-    }
-
-    #fa_animation span {
-        display: inline-block;
-        white-space: nowrap;
-        padding-right: 100%;
-        animation: continuous 5s linear(0 0%, 0.22 2.1%, 0.86 6.5%, 1.11 8.6%, 1.3 10.7%, 1.35 11.8%, 1.37 12.9%, 1.37 13.7%, 1.36 14.5%, 1.32 16.2%, 1.03 21.8%, 0.94 24%, 0.89 25.9%, 0.88 26.85%, 0.87 27.8%, 0.87 29.25%, 0.88 30.7%, 0.91 32.4%, 0.98 36.4%, 1.01 38.3%, 1.04 40.5%, 1.05 42.7%, 1.05 44.1%, 1.04 45.7%, 1 53.3%, 0.99 55.4%, 0.98 57.5%, 0.99 60.7%, 1 68.1%, 1.01 72.2%, 1 86.7%, 1 100%) infinite;
-    }
-
-    #fa_register_div .fa_color-icon {
-        color: #ff0000;
-    }
-
-    .fa_close-icon {
-        position: absolute;
-        top: -10px;
-        right: -10px !important;
-        background-color: #ff5f5f;
-        color: #fff;
-        border: none;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: rgba(0, 0, 0, 0.5) 1px 1px 5px;
-        transition: background-color 0.3s ease;
-    }
-
-    .fa_close-icon i {
-        font-size: 1.2em;
-    }
-
-    .fa_close-icon:hover {
-        background-color: #ff3030;
-    }
-
-    #fa_register_div [data-title] {
-        position: relative;
-    }
-
-    #fa_register_div [data-title]::after {
-        content: attr(data-title);
-        position: absolute;
-        background-color: #333;
-        opacity: 0;
-        z-index: 100;
-        color: #f5f5f5;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 0.85em;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.8);
-        transition: all 0.3s;
-        visibility: hidden;
-        white-space: pre-wrap;
-        font-family: sans-serif;
-        font-weight: normal;
-    }
-
-    #fa_register_div [data-title]:hover::after {
-        visibility: visible;
-        opacity: 1;
-        transition-delay: 0.5s;
-    }
-
-    #fa_register_div [data-title].right:after {
-        top: 50%;
-        left: 100%;
-        transform: translateY(-50%) translateX(10px);
-    }
-
-    #fa_register_div [data-title].top::after {
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%) translateY(-10px);
-    }
-
-    @keyframes in {
-        from {
-            opacity: 0;
-            transform: scale(0.8);
+    $(`<style id="${ID}-style">
+        #${ID} {
+            --bg: #0d0e11; --surface: #15171c; --hover: #1b1e24; --line: #262930; --line-hi: #3a3e47;
+            --text: #d4d7dd; --muted: #6f7580; --accent: #a33b3b; --ok: #4f9a5b;
+            position: fixed; top: 18%; left: 40%; z-index: 12000; width: 330px;
+            background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .55);
+            font: 12px/1.4 ${FONT};
         }
-
-        to {
-            opacity: 1;
-            transform: scale(1);
+        #${ID} * { box-sizing: border-box; margin: 0; }
+        #${ID} svg { display: block; flex: none; }
+        #${ID} button { font: inherit; color: inherit; }
+        #${ID} .sc-head {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: move; user-select: none;
         }
-    }
-
-    @keyframes on {
-
-        0%,
-        100% {
-            box-shadow: 0 0 10px 2px rgba(0, 123, 255, 0.8);
+        #${ID} .sc-logo {
+            width: 28px; height: 28px; display: grid; place-items: center; flex: none;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; color: var(--accent);
         }
-
-        50% {
-            box-shadow: 0 0 20px 6px rgba(0, 123, 255, 0.5);
+        #${ID} .sc-heading { flex: 1; min-width: 0; }
+        #${ID} .sc-title { font-weight: 600; letter-spacing: .02em; }
+        #${ID} .sc-sub { color: var(--muted); font-size: 11px; }
+        #${ID} .sc-icon {
+            width: 24px; height: 24px; display: grid; place-items: center;
+            background: none; border: 0; border-radius: 4px; color: var(--muted); cursor: pointer;
         }
-    }
-
-    @keyframes continuous {
-        0% {
-            transform: translateX(100%);
+        #${ID} .sc-icon:hover { color: var(--text); background: var(--surface); }
+        #${ID} .sc-icon.sc-active { color: var(--accent); background: var(--surface); }
+        #${ID} .sc-busy .sc-refresh svg { animation: sc-spin .8s linear infinite; }
+        @keyframes sc-spin { to { transform: rotate(360deg); } }
+        #${ID} .sc-body { display: flex; flex-direction: column; gap: 12px; padding: 12px; max-height: 70vh; overflow: auto; }
+        #${ID} .sc-section { display: flex; flex-direction: column; gap: 8px; }
+        #${ID} .sc-divider { height: 1px; margin: 0 -12px; background: var(--line); flex: none; }
+        #${ID} .sc-label { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+        #${ID} .sc-empty { color: var(--muted); text-align: center; padding: 8px 0; }
+        #${ID} .sc-idle { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 8px 10px; text-align: center; }
+        #${ID} .sc-idle-icon {
+            width: 44px; height: 44px; margin-bottom: 4px; display: grid; place-items: center;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 50%; color: var(--muted);
         }
-
-        100% {
-            transform: translateX(13%);
+        #${ID} .sc-idle-icon svg { width: 20px; height: 20px; }
+        #${ID} .sc-idle b { font-size: 13px; font-weight: 600; }
+        #${ID} .sc-idle p { max-width: 250px; color: var(--muted); font-size: 11px; }
+        #${ID} .sc-options { display: flex; gap: 6px; }
+        #${ID} .sc-option b, #${ID} .sc-option small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        #${ID} .sc-option {
+            flex: 1 1 0; min-width: 0; padding: 6px 4px; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 1px;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
         }
-    }
-</style>
-<div id="fa_register_div">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <div class="fa_close-icon" onclick="return this.parentElement.remove(undefined);">
-        <i class="fa-solid fa-xmark fa-lg"></i>
-    </div>
-    <h3>CANCEL SNIPE</h3>
-    <div data-title="DATE/TIME THAT THE NOBLE WILL ARRIVE\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED" class="right">
-        <input type="datetime-local" max="9999-12-31T23:59" step="1">
-    </div>
-    <div data-title="DATE/TIME OF THE COMMAND YOU SENT TO SNIP\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED" class="right">
-        <input type="datetime-local" max="9999-12-31T23:59" step="1">
-    </div>
-    <div data-title="DURATION OF THE COMMAND YOU SENT\n\nYOU CAN CLICK ON THE COMMAND AND IT WILL BE AUTOMATICALLY FILLED" class="right">
-        <input type="time" step="1">
-    </div>
-    <div>
-        <table>
-            <thead>
-                <tr>
-                    <th data-title="DURATION OF COMMAND TO CANCEL" class="top"><i class="fa-solid fa-ban fa-lg"></i></th>
-                    <th data-title="TIME LEFT TO CANCEL THE COMMAND" class="top"><i class="fa-solid fa-clock fa-lg"></i></th>
-                    <th data-title="EXPORT THE DURATION TO CANCEL" class="top"><i class="fa-solid fa-file-export fa-lg"></i></th>
-                    <th data-title="DELETE THE COMMAND" class="top"><i class="fa-solid fa-trash-can fa-lg"></i></th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-    <button onclick="return Functions.updateTableWithProcessedTimes(undefined);">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        CALCULATE TIMES
-    </button>
-    <div id="fa_animation">
-        <span>
-            DEVELOPED BY:
-            <i class="fa_color-icon">K I N G S</i>
-            🔥
-        </span>
-    </div>
-</div>`
+        #${ID} .sc-option:hover { border-color: var(--line-hi); background: var(--hover); }
+        #${ID} .sc-option.sc-active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+        #${ID} .sc-option b { font-weight: 600; }
+        #${ID} .sc-option small, #${ID} .sc-cmd small { color: var(--muted); font: 11px ui-monospace, Consolas, monospace; }
+        #${ID} .sc-plan { padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+        #${ID} .sc-plan b { font-family: ui-monospace, Consolas, monospace; }
+        #${ID} .sc-cmd {
+            width: 100%; padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; text-align: left;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+        }
+        #${ID} .sc-cmd:hover { border-color: var(--line-hi); background: var(--hover); }
+        #${ID} .sc-cmd.sc-active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+        #${ID} .sc-cmd-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #${ID} .sc-cmd-status { font-size: 11px; color: #e0a44a; }
+        #${ID} .sc-cmd.sc-fit .sc-cmd-status { color: var(--ok); font-weight: 600; }
+        #${ID} .sc-ret {
+            padding: 6px 10px; display: flex; justify-content: space-between; gap: 10px;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; font-size: 11px;
+        }
+        #${ID} .sc-ret span:first-child { font-family: ui-monospace, Consolas, monospace; }
+        #${ID} .sc-ret span:last-child { color: #e0a44a; }
+        #${ID} .sc-ret.sc-fit span:last-child { color: var(--ok); font-weight: 600; }
+        #${ID} .sc-countdown { padding: 4px 0; font: 600 22px ui-monospace, Consolas, monospace; text-align: center; }
+        #${ID} .sc-countdown.sc-soon { color: var(--accent); }
+        #${ID} .sc-at { color: var(--muted); text-align: center; font-size: 11px; }
+        #${ID} .sc-at b { color: var(--text); font: 600 13px ui-monospace, Consolas, monospace; }
+        #${ID} .sc-target { display: flex; justify-content: center; align-items: baseline; gap: 6px; }
+        tr.sc-mark > td { background: #fff0a8 !important; }
+        #${ID} .sc-body::-webkit-scrollbar { width: 8px; }
+        #${ID} .sc-body::-webkit-scrollbar-thumb { background: #2e323a; border-radius: 4px; }
+        @supports not selector(::-webkit-scrollbar) {
+            #${ID} .sc-body { scrollbar-width: thin; scrollbar-color: #2e323a transparent; }
+        }
+    </style>`).appendTo('head');
 
-$(stringHTML).appendTo(document.body).eq(2).draggable();
+    const $panel = $(`<div id="${ID}">
+        <div class="sc-head">
+            <div class="sc-logo">${ICON.target}</div>
+            <div class="sc-heading">
+                <div class="sc-title">Snipe Cancel</div>
+                <div class="sc-sub"></div>
+            </div>
+            <button class="sc-icon sc-test" title="Modo teste: qualquer comando chegando conta como nobre">${ICON.flask}</button>
+            <button class="sc-icon sc-refresh" title="Atualizar">${ICON.refresh}</button>
+            <button class="sc-icon sc-close" title="Fechar">${ICON.close}</button>
+        </div>
+        <div class="sc-body"></div>
+    </div>`).appendTo('body');
 
-// Main script functions for data manipulation, time handling, and DOM element interaction.
+    const $body = $panel.find('.sc-body');
+    const durations = {};
+    const state = { root: null, trains: [], commands: [], returns: [], train: 0, gap: 0, command: null, test: localStorage.getItem(TEST_KEY) === '1' };
 
-this.Functions = {
-    configureLanguagesAndListeners() {
+    const pad = (n, size = 2) => String(n).padStart(size, '0');
+    const serverNow = () => Math.floor(window.Timing && Timing.getCurrentServerTime ? Timing.getCurrentServerTime() : Date.now());
 
-        /* 
-            - Creates the `window.langMapping` object, which contains language data within an array, 
-            - ensuring that the month values are formatted as two-digit numbers according to the local date language.
-        */
+    const shift = (() => {
+        const [d, m, y] = $('#serverDate').text().split('/');
+        const shown = Date.parse(`${y}-${m}-${d}T${$.trim($('#serverTime').text())}Z`);
+        return isNaN(shown) ? 0 : Math.round((shown - serverNow()) / TZ_STEP) * TZ_STEP;
+    })();
 
-        window.langMapping = [
-            "f0eadcecffbb5f66bf549645d20bd0cd",
-            "b8a8de82dd0387e97241d76edb64c78e",
-            "99d26c335ff06a1f4f32e1b78ccc0855",
-            "2d0ea4e2a5d29e1321ae6d9ff1861052",
-            "c0a48f32c11d4e56173d7bb151154236",
-            "00a5cf879180a196bf1720187b4a29ba",
-            "23176c991f48ba3a17942b82cc7787b2",
-            "19c1b76c51e0eb5d5c92221e6e891bad",
-            "1f17626a373b6a69f8287ed8781e1e0a",
-            "4caa55b7c609d00fb95f03cd1ceafeab",
-            "b575d8d37fffa782cfa3592d1cfc65da",
-            "a0bccd9315fa3e38aef93f34cd116aa9"
-        ].reduce(
-            (acc, el, i) => (acc[lang[el].toLowerCase()] = `${i + 1}`.padStart(2, '0'), acc), {}
-        );
-        
-        if (mobiledevice) {
-            $('#fa_register_div').css({top: '50%', left: '50%', transform: 'translate(-50%, -50%)'});
-        };
+    const now = () => serverNow() + shift;
+    const ms = t => pad((t % 1000 + 1000) % 1000, 3);
+    const clock = t => `${new Date(t).toISOString().slice(11, 19)}:${ms(t)}`;
+    const second = t => Math.floor(t / 1000);
+    const span = t => {
+        const total = Math.max(0, Math.round(t));
+        const s = second(total);
+        return `${Math.floor(s / 3600)}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}:${ms(total)}`;
+    };
+    const timer = t => `${Math.floor(t / 3600)}:${pad(Math.floor(t % 3600 / 60))}:${pad(t % 60)}`;
+    const seconds = text => text.split(':').map(Number).reduce((acc, n) => acc * 60 + n, 0);
+    const drag = () => {
+        if ($.fn.draggable) $panel.draggable({ handle: '.sc-head', cancel: '.sc-icon', containment: 'window' });
+        if (window.mobiledevice) $panel.css({ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' });
+    };
 
-        Timing.tickHandlers.timers.handleTimerEnd = event => $(event.target).closest('tr').remove();
+    const arrival = row => {
+        const $row = $(row);
+        return +$row.find('[data-endtime]').first().attr('data-endtime') * 1000 + (+$row.find('.grey.small').first().text() || 0) + shift;
+    };
 
-        $(document).on('click', function (e) {
-            Functions.globalCommandDataFormatterAndProcessor.init(e);
-        });
-    },
-    globalCommandDataFormatterAndProcessor: {
-        applyLanguageFormat(unformattedDateTime) {
+    const trains = $root => $root.find(INCOMING).find('tr.command-row')
+        .filter((_, row) => state.test || $(row).find('img[src*="command/snob"]').length)
+        .get().map(arrival).sort((a, b) => a - b)
+        .reduce((acc, t) => {
+            const last = acc[acc.length - 1];
+            if (last && t - last[last.length - 1] < TRAIN_GAP) last.push(t);
+            else acc.push([t]);
+            return acc;
+        }, [])
+        .filter(train => train.length > 1);
 
-            /* 
-                - Formats the input `unformattedDateTime` string by replacing the original date format with a new one. 
-                - The format is changed to `YYYY-MonthCode-DD HH:MM:SS`, 
-                - where the month is mapped using `langMapping` based on the language code.
-            */
+    const duration = async href => {
+        if (href in durations) return durations[href];
+        const html = await $.get(href);
+        const text = $.trim($(html).find('#content_value td').filter((_, td) => RX_DURATION.test($.trim(td.textContent))).first().text());
+        return durations[href] = text ? seconds(text) * 1000 : 0;
+    };
 
-            return unformattedDateTime.replace(/(\S{3})\. (\d+), (\d+)\x20\x20(\d+:\d+:\d+).*/, (regex, $1, $2, $3, $4) => `${$3}-${langMapping[$1]}-${$2} ${$4}`);
-        },
-        filterResponseContent(responseData, regex) {
+    const commands = async $root => {
+        const rows = $root.find(OUTGOING).find('tr.command-row')
+            .filter((_, row) => $(row).find('a[href*="cancel"], .command-cancel').length)
+            .get().map(row => ({
+                href: $(row).find('a[href*="info_command"]').attr('href'),
+                id: $(row).find('[data-command-id]').first().attr('data-command-id'),
+                name: $.trim($(row).find('.quickedit-label').first().text()) || 'Comando',
+                end: arrival(row),
+            }));
+        const list = [];
+        for (const cmd of rows) {
+            const travel = await duration(cmd.href);
+            list.push({ ...cmd, travel, sent: cmd.end - travel });
+        }
+        return list.filter(cmd => cmd.travel && cmd.sent > now() - CANCEL_LIMIT);
+    };
 
-            /* 
-                - Filters the `responseData` to extract the text content from the second `<td>` element within `#content_value`. 
-                - The content is filtered using the provided regular expression (`regex`), 
-                - returning the text of the first matching element.
-            */
-           
-            return $(responseData.toString()).find('#content_value td:nth-child(2)').filter((i, el) => regex.test(el.textContent)).eq(0).text();
-        },
-        async init({ target } /* Destructures the event received from the document listener */) {
+    const returns = $root => $root.find(OUTGOING).find('tr.command-row')
+        .filter((_, row) => $(row).find('[data-command-type="cancel"]').length)
+        .get().map(arrival).sort((a, b) => a - b);
 
-            /* 
-                - The `init` function listens for an event and processes a command row from a table.
-                - It first checks if the closest `<tr>` element has the `command-row` class, then highlights the row and fetches data via an AJAX request (`$.get`).
-                - Once the response is retrieved, it updates input fields inside the `#fa_register_div` based on specific content extracted from the response.
-                - The first input is populated with a formatted date, while the others are filled with calculated durations or modified timestamps.
-            */
+    const gaps = train => train.slice(1).map((b, i) => ({ a: train[i], b, n: i + 1 }));
 
-            /* Gets the closest `tr` element relative to `target`. */
+    const place = (t, train) => {
+        const i = train.findIndex(noble => t < noble);
+        if (i === 0) return { ok: false, text: 'antes do 1º' };
+        if (i === -1) return { ok: false, text: 'depois do último' };
+        return { ok: true, text: `entre ${i}º e ${i + 1}º` };
+    };
 
-            let parentElement =$(target).closest('tr');
+    const plan = ({ a, b }) => {
+        const from = a + 1;
+        const to = b - 1;
+        if (to < from) return 'Intervalo curto demais para encaixar.';
+        const parts = second(from) === second(to) ? [[from, to]] : [[from, second(from) * 1000 + 999], [second(to) * 1000, to]];
+        return `Envie com ${parts.map(([x, y]) => `ms <b>${ms(x)}–${ms(y)}</b> em segundo <b>${second(x) % 2 ? 'ímpar' : 'par'}</b>`).join(' ou ')}.`;
+    };
 
-            /* Check if the event was triggered on a command row */
+    const evaluate = (cmd, { a, b }) => {
+        const k = Math.floor((a - cmd.sent) / 2000) + 1;
+        const back = cmd.sent + k * 2000;
+        const start = second(cmd.sent) * 1000 + k * 1000;
+        const status = back >= b ? `Não encaixa: volta ${clock(back)}`
+            : k * 1000 > CANCEL_LIMIT ? 'Passa do limite de 10 min para cancelar'
+            : k * 1000 >= cmd.travel ? 'Chega ao destino antes de cancelar'
+            : start + 1000 <= now() ? 'O segundo de cancelar já passou'
+            : '';
+        const counter = timer(second(cmd.end) - second(start));
+        return { start, back, counter, fit: !status, status: status || `Encaixa · cancele com o contador em ${counter}` };
+    };
 
-            if (parentElement.hasClass('command-row')) {
+    const option = (active, title, sub, attrs) => `<button class="sc-option${active ? ' sc-active' : ''}" ${attrs}><b>${title}</b><small>${sub}</small></button>`;
 
-                /* Highlight the command row */
+    const render = () => {
+        const train = state.trains[state.train];
+        if (!train) return $body.html(`<div class="sc-idle">
+            <div class="sc-idle-icon">${ICON.target}</div>
+            <b>Nenhum trem de nobres</b>
+            <p>Quando 2 ou mais nobres chegarem nesta aldeia com menos de 1 s entre eles, os intervalos para encaixar aparecem aqui.</p>
+        </div>`);
+        const gap = gaps(train)[state.gap];
+        const results = state.commands.map(cmd => ({ cmd, ...evaluate(cmd, gap) }));
+        const chosen = results.find(r => r.cmd.href === state.command && r.fit) || results.find(r => r.fit);
+        state.command = chosen && chosen.cmd.href;
+        const back = state.returns.filter(t => t > train[0] - RETURN_NEAR && t < train[train.length - 1] + RETURN_NEAR);
+        $body.html(`
+            ${state.trains.length > 1 ? `<div class="sc-section">
+                <div class="sc-label">Trem</div>
+                <div class="sc-options">${state.trains.map((t, i) => option(i === state.train, clock(t[0]).slice(0, 8), `${t.length} nobres`, `data-train="${i}"`)).join('')}</div>
+            </div>` : ''}
+            <div class="sc-section">
+                <div class="sc-label">Encaixar entre</div>
+                <div class="sc-options">${gaps(train).map((g, i) => option(i === state.gap, `${g.n}º → ${g.n + 1}º`, `${ms(g.a)}–${ms(g.b)}`, `data-gap="${i}"`)).join('')}</div>
+                <div class="sc-plan">${plan(gap)}</div>
+            </div>
+            <div class="sc-divider"></div>
+            <div class="sc-section">
+                <div class="sc-label">Seus comandos</div>
+                ${results.length ? results.map(r => `<button class="sc-cmd${r.fit ? ' sc-fit' : ''}${chosen && r === chosen ? ' sc-active' : ''}" data-href="${r.cmd.href}">
+                    <span class="sc-cmd-name">${$('<i>').text(r.cmd.name).html()}</span>
+                    <small>saiu ${clock(r.cmd.sent)}</small>
+                    <span class="sc-cmd-status">${r.status}</span>
+                </button>`).join('') : '<div class="sc-empty">Envie o apoio. Ao voltar para esta aba, ele aparece aqui.</div>'}
+            </div>
+            ${back.length ? `<div class="sc-divider"></div>
+            <div class="sc-section">
+                <div class="sc-label">Retornando</div>
+                ${back.map(t => {
+                    const p = place(t, train);
+                    return `<div class="sc-ret${p.ok ? ' sc-fit' : ''}"><span>${clock(t)}</span><span>${p.ok ? '✓' : '✗'} ${p.text}</span></div>`;
+                }).join('')}
+            </div>` : ''}
+            ${chosen ? `<div class="sc-divider"></div>
+            <div class="sc-section">
+                <div class="sc-countdown"></div>
+                <div class="sc-at sc-target"><span>Cancele quando o “Chega em” marcar</span><b>${chosen.counter}</b></div>
+            </div>` : ''}
+        `);
+        mark(chosen && chosen.cmd.id);
+        clearInterval(window.scTimer);
+        if (!chosen) return;
+        $body.data('start', chosen.start);
+        window.scTimer = setInterval(tick, 47);
+        tick();
+    };
 
-                parentElement.children('td').css('background', '#ffff5b');
+    const mark = id => {
+        $('tr.sc-mark').removeClass('sc-mark');
+        if (id) $(OUTGOING).find(`[data-command-id="${id}"]`).closest('tr.command-row').addClass('sc-mark');
+    };
 
-                /* Make the AJAX request to fetch data from the command row */
+    const tick = () => {
+        const left = $body.data('start') - now();
+        const inside = left <= 0 && left > -1000;
+        $body.find('.sc-countdown')
+            .text(inside ? 'CANCELE AGORA' : left > 0 ? span(left) : 'Horário passou')
+            .toggleClass('sc-soon', inside || left > 0 && left < 10000);
+        if (left <= -1000) clearInterval(window.scTimer);
+    };
 
-                const response = await $.get(parentElement.find('a[href*=info_command]').attr('href'));
+    const load = async $root => {
+        state.root = $root;
+        state.trains = trains($root);
+        state.commands = await commands($root);
+        state.returns = returns($root);
+        state.train = Math.min(state.train, Math.max(0, state.trains.length - 1));
+        state.gap = Math.min(state.gap, Math.max(0, (state.trains[state.train] || []).length - 2));
+        render();
+    };
 
-                /* 
-                    - Selects all input elements inside the `#fa_register_div` container.
-                    - Stores the collection of input elements in the `inputElement` variable for further manipulation.
-                */
+    const refresh = async () => {
+        if ($panel.hasClass('sc-busy')) return;
+        $panel.addClass('sc-busy');
+        try {
+            await load($('<div>').html(await $.get(location.href)));
+        } catch {
+            UI.ErrorMessage('Não foi possível atualizar a visualização');
+        }
+        $panel.removeClass('sc-busy');
+    };
 
-                let inputElement = $('#fa_register_div').find('input');
+    const mode = () => {
+        $panel.find('.sc-test').toggleClass('sc-active', state.test);
+        $panel.find('.sc-sub').text(state.test ? 'Modo teste · qualquer comando conta como nobre' : 'Nobres e comandos detectados sozinhos');
+    };
 
-                /* Check if it's in the 'show_outgoing_units' area to decide how to fill the fields */
+    const close = () => {
+        clearInterval(window.scTimer);
+        mark(null);
+        $(window).off('.sc');
+        $(`#${ID}, #${ID}-style`).remove();
+    };
 
-                if ($(parentElement).parents(':eq(4)').attr('id') != 'show_outgoing_units') {
+    $panel.on('click', '.sc-close', close);
+    $panel.on('click', '.sc-refresh', refresh);
+    $panel.on('click', '.sc-test', () => {
+        state.test = !state.test;
+        localStorage.setItem(TEST_KEY, state.test ? '1' : '0');
+        mode();
+        if (!state.root) return;
+        state.trains = trains(state.root);
+        state.train = 0;
+        state.gap = 0;
+        render();
+    });
+    $panel.on('click', '[data-train]', e => {
+        state.train = +$(e.currentTarget).data('train');
+        state.gap = 0;
+        render();
+    });
+    $panel.on('click', '[data-gap]', e => {
+        state.gap = +$(e.currentTarget).data('gap');
+        render();
+    });
+    $panel.on('click', '.sc-cmd', e => {
+        state.command = $(e.currentTarget).data('href');
+        render();
+    });
+    $(window).on('focus.sc', refresh);
 
-                    /* Fill the first field with the formatted date */
+    drag();
 
-                    inputElement.eq(0).val(this.applyLanguageFormat(this.filterResponseContent(response, /\S{3}\./)));
-                }
-                else {
-
-                    /* Fill the remaining fields with calculated durations and timestamps */
-
-                    let duration = Functions.convertTimeToSeconds(this.filterResponseContent(response, /^\d+:/)) * 1000;
-                    inputElement[1].value = Functions.formatDateToISOString(Functions.dateToMilliseconds(this.applyLanguageFormat(this.filterResponseContent(response, /\S{3}\./)) + '.000Z') - duration);
-                    inputElement[2].value = Functions.formatTimeToHHMMSS(duration / 1000);
-                };
-
-            };
-        },
-    },
-    formatAndGetServerDateTime() {
-
-        /* 
-            - The `formatAndGetServerDateTime` function retrieves the server date and time by combining the text content of the elements `#serverDate` and `#serverTime`.
-            - It formats the date from `MM/DD/YYYY` to `YYYY-MM-DD`, preserving the time part.
-            - The formatted string is then passed to `Functions.dateToMilliseconds` for further conversion.
-        */
-
-        return Functions.dateToMilliseconds((
-            $('#serverDate').text() + ' ' + $('#serverTime').text()).replace(/(\d+)\/(\d+)\/(\d+) (.*)/, '$3-$2-$1 $4')
-        );
-    },
-    updateTableWithProcessedTimes() {
-
-        /* 
-            1. Maps input times, applying `dateToMilliseconds` and `convertTimeToSeconds` to the inputs.
-            2. Calculates the average difference between the first two input times.
-            3. Generates a table row with formatted time differences, an export button, and a delete icon.
-        */
-
-        $('#fa_register_div tbody').html(function (index) {
-
-            /* 
-                - Maps over input elements inside `#fa_register_div`.
-                - For the first input, applies `dateToMilliseconds`, for others applies `convertTimeToSeconds` and multiplies by 1000.
-            */
-
-            let mappedInputTimes = $('#fa_register_div input').map(function (i) {
-                return (!i || i == 1) && Functions.dateToMilliseconds(this.value) || Functions.convertTimeToSeconds(this.value) * 1000;
-            });
-
-            /* Calculates the average difference between the first two values in `mappedInputTimes` */
-
-            let diference = (mappedInputTimes[0] - mappedInputTimes[1]) / 2;
-
-            /*  Generates a table row with time differences, export button, and delete icon */
-
-            return `<tr>
-                <td>` + Functions.formatTimeToHHMMSS((mappedInputTimes[2] - diference) / 1000) + `</td>
-                <td><span class="timer">` + Functions.formatTimeToHHMMSS((mappedInputTimes[0] - diference - Functions.formatAndGetServerDateTime()) / 1000) + `</span></td>
-                <td><button onclick="return Functions.exportTimeToClipboard(this);">EXPORT</button></td>
-                <td><i class="fa-solid fa-circle-xmark fa-lg" onclick="return this.parentElement.parentNode.remove(undefined);"></i></td>
-            </tr>`;
-        });
-        Timing.tickHandlers.timers.init();
-    },
-    exportTimeToClipboard(event) {
-
-        /* 
-            - Exports the formatted time to clipboard with a success message.
-        */
-
-        navigator.clipboard.writeText(`CANCEL AT: ` + $(event).parent(Node).prevAll(':eq(1)').text() + ` 💥`) && UI.SuccessMessage('Time exported successfully!');
-    },
-    formatDateToISOString(dateTime) {
-
-        /* 
-            - Converts the current date to an ISO string format.
-            - Removes the milliseconds part of the ISO string.
-        */
-
-        return new Date(dateTime).toISOString().replace(/\..+/, ``);
-    },
-    convertTimeToSeconds(duration) {
-
-        /* 
-            - Converts a time duration in the format HH:MM:SS to seconds.
-            - Splits the duration string by colon, maps each part to a number, and sums up the corresponding time in seconds (hours to seconds, minutes to seconds, and seconds).
-        */
-
-        return duration.split(':').map(Number).reduce((acc, el, i) => acc + (!i ? el * 3600 : i == 1 ? el * 60 : el), 0);
-    },
-    formatTimeToHHMMSS(seconds) {
-
-        /* 
-            - Converts a time duration in seconds to the format HH:MM:SS.
-            - Divides the total seconds into hours, minutes, and remaining seconds, then formats each part with leading zeros and joins them with a colon.
-        */
-
-        return [seconds / 3600, seconds % 3600 / 60, seconds % 60].map(el => String(~~el).padStart(2, '0')).join(':');
-    },
-    dateToMilliseconds(dateValue) {
-
-        /* 
-            - Converts a given date value into milliseconds.
-        */
-
-        return new Date(dateValue).getTime();
-    },
-};
-
-/* 
-    - Initializes language settings and attaches event listeners to the document.
-    - Configures language mappings and ensures that the application is ready to handle user interactions.
-*/
-
-Functions.configureLanguagesAndListeners();
+    mode();
+    load($(document));
+})();
