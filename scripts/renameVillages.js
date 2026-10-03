@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview_villages';
     if (!page) return TWK.redirect('overview_villages&mode=combined&group=0', 'Redirecionando para a visualização de aldeias...');
 
@@ -102,14 +102,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
             const values = { '{num}': String(seq[group]++).padStart(opt.digits, '0'), '{k}': village.k, '{nome}': village.name };
             const name = opt.format.replace(/\{(num|k|nome)\}/g, token => values[token]).replace(/\s+/g, ' ').trim().slice(0, MAX);
             $count.text(`Renomeando ${i + 1}/${total}`);
-            $village.find('.rename-icon').first().trigger('click');
-            $village.find('.quickedit-edit input[type=text]').first().val(name);
-            $village.find('.quickedit-edit input[type=button]').first().trigger('click');
+            TWK.rename($village, () => name);
             await TWK.wait(200);
         }
         $run.prop('disabled', false);
         counter();
-        UI.SuccessMessage(`${TWK.plural(total, 'aldeia renomeada', 'aldeias renomeadas')}`);
+        UI.SuccessMessage(TWK.plural(total, 'aldeia renomeada', 'aldeias renomeadas'));
     };
 
     $panel.on('click', '.rv-token', e => insert($(e.currentTarget).data('token')));

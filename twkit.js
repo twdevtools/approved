@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.0.0';
+    const VERSION = '1.1.0';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -28,9 +28,6 @@
         target: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'),
         flask: svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/>'),
         chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
-        shield: svg('<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/>'),
-        fill: svg('<path d="M12 5v14M5 12l7 7 7-7"/>'),
-        send: svg('<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>'),
     };
 
     const CSS = `
@@ -74,14 +71,13 @@
             color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
         }
         .twk-panel .twk-label > span { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
-        .twk-panel .twk-label .twk-count { color: var(--text); }
         .twk-panel .twk-hint { margin: 0 auto 0 0; display: inline-flex; align-items: center; gap: 6px; }
         .twk-panel .twk-hint::before { content: ''; width: 3px; height: 3px; border-radius: 50%; background: currentColor; transform: translateY(1px); }
         .twk-panel .twk-caption { color: var(--muted); font-size: 11px; }
         .twk-panel .twk-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .twk-panel .twk-row { display: flex; align-items: center; gap: 8px; }
         .twk-panel .twk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .twk-panel input[type=text], .twk-panel input[type=number], .twk-panel input[type=datetime-local], .twk-panel select, .twk-panel textarea {
+        .twk-panel input[type=text], .twk-panel input[type=number], .twk-panel select, .twk-panel textarea {
             width: 100%; height: 30px; padding: 0 10px; color-scheme: dark;
             background: var(--surface); border: 1px solid var(--line); border-radius: 6px; outline: none;
         }
@@ -205,15 +201,14 @@
     };
     const now = () => serverNow() + (offset ??= shift());
 
-    const unitInfo = async () => {
-        const key = `twkUnitInfo_${game_data.world}`;
-        const cached = store.get(key);
-        if (cached) return cached;
-        const xml = await get('/interface.php?func=get_unit_info');
-        const info = Object.fromEntries($(xml).find('config').children().get()
-            .map(el => [el.tagName, { speed: +$(el).find('speed').text(), pop: +$(el).find('pop').text() }]));
-        store.set(key, info);
-        return info;
+    const rename = ($scope, edit) => {
+        $scope.find('.rename-icon').first().trigger('click');
+        const $edit = $scope.find('.quickedit-edit');
+        const $input = $edit.find('input[type=text]').first();
+        const name = edit($.trim($input.val()));
+        $input.val(name);
+        $edit.find('input[type=button]').first().trigger('click');
+        return name;
     };
 
     const copy = async (text, message) => {
@@ -222,7 +217,8 @@
             document.execCommand('copy');
             $area.remove();
         };
-        await (navigator.clipboard ? navigator.clipboard.writeText(text) : fallback());
+        if (navigator.clipboard) await navigator.clipboard.writeText(text);
+        else fallback();
         UI.SuccessMessage(message);
     };
 
@@ -294,6 +290,6 @@
         panel, check, number, loading, idle,
         wait, format, plural, escape, copy, store,
         url, redirect, get, doc, pages,
-        serverNow, now, unitInfo,
+        serverNow, now, rename,
     };
 })();

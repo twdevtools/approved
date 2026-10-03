@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview';
     if (!page) return TWK.redirect('overview', 'Redirecionando para a visualização da aldeia...');
 
@@ -22,7 +22,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
             <button class="twk-icon sc-refresh" title="Atualizar">${TWK.ICON.refresh}</button>
         `,
         onClose: () => {
-            clearInterval(window.scTimer);
+            clearInterval(ticker);
             mark(null);
             $(window).off('.sc');
         },
@@ -63,6 +63,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
     const $body = $panel.find('.twk-body');
     const $refresh = $panel.find('.sc-refresh');
     const durations = {};
+    let ticker;
     const shift = Math.round((TWK.now() - TWK.serverNow()) / TZ_STEP) * TZ_STEP;
     const state = { root: null, trains: [], commands: [], returns: [], train: 0, gap: 0, command: null, test: localStorage.getItem(TEST_KEY) === '1' };
 
@@ -89,7 +90,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         .reduce((acc, t) => {
             const last = acc[acc.length - 1];
             const joins = last && t - last[last.length - 1] < TRAIN_GAP;
-            joins ? last.push(t) : acc.push([t]);
+            if (joins) last.push(t);
+            else acc.push([t]);
             return acc;
         }, [])
         .filter(train => train.length > 1);
@@ -165,12 +167,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         $body.find('.sc-countdown')
             .text(inside ? 'CANCELE AGORA' : left > 0 ? span(left) : 'Horário passou')
             .toggleClass('sc-soon', inside || left > 0 && left < 10000);
-        if (left <= -1000) clearInterval(window.scTimer);
+        if (left <= -1000) clearInterval(ticker);
     };
 
     const render = () => {
         const train = state.trains[state.train];
-        clearInterval(window.scTimer);
+        clearInterval(ticker);
         if (!train) {
             mark(null);
             return $body.html(TWK.idle(TWK.ICON.target, 'Nenhum trem de nobres', 'Quando 2 ou mais nobres chegarem nesta aldeia com menos de 1 s entre eles, os intervalos para encaixar aparecem aqui.'));
@@ -216,7 +218,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         mark(chosen?.cmd.id);
         if (!chosen) return;
         $body.data('start', chosen.start);
-        window.scTimer = setInterval(tick, 47);
+        ticker = setInterval(tick, 47);
         tick();
     };
 
@@ -230,12 +232,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         render();
     };
 
-    const refresh = async () => {
+    const refresh = async $root => {
         const busy = $refresh.hasClass('twk-spinning');
         if (busy) return;
         $refresh.addClass('twk-spinning');
         try {
-            await load(await TWK.doc(location.href));
+            await load($root || await TWK.doc(location.href));
         } catch {
             UI.ErrorMessage('Não foi possível atualizar a visualização');
         }
@@ -264,13 +266,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         render();
     };
 
-    $panel.on('click', '.sc-refresh', refresh);
+    $panel.on('click', '.sc-refresh', () => refresh());
     $panel.on('click', '.sc-test', test);
     $panel.on('click', '[data-train]', e => select('train', +$(e.currentTarget).data('train')));
     $panel.on('click', '[data-gap]', e => select('gap', +$(e.currentTarget).data('gap')));
     $panel.on('click', '.sc-cmd', e => select('command', $(e.currentTarget).data('href')));
-    $(window).on('focus.sc', refresh);
+    $(window).on('focus.sc', () => refresh());
 
     mode();
-    load($(document));
+    refresh($(document));
 });

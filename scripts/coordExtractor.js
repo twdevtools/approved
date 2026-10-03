@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(() => {
     const RX = /(?<!\d)\d{1,3}\|\d{1,3}(?!\d)/g;
     const SEPARATORS = { line: '\n', space: ' ', comma: ',' };
 
@@ -59,7 +59,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         collect();
     };
 
-    $panel.on('click', '.cc-copy', () => TWK.copy($output.val(), `${TWK.plural(+$count.text(), 'coordenada copiada', 'coordenadas copiadas')}`));
+    $panel.on('click', '.cc-copy', () => TWK.copy($output.val(), TWK.plural(+$count.text(), 'coordenada copiada', 'coordenadas copiadas')));
     $panel.on('click', '.cc-clear', clear);
     $input.on('input', collect);
     $sep.add($unique).on('change', collect);

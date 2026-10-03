@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview' || (game_data.screen === 'overview_villages' && game_data.mode === 'incomings');
     if (!page) return TWK.redirect('overview_villages&mode=incomings&subtype=attacks', 'Redirecionando para os ataques chegando...');
 
@@ -13,8 +13,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         $(TABLES).off('.tr');
         $(document).off('.tr');
     };
-
-    cleanup();
 
     const $panel = TWK.panel({
         id: 'tr-panel',
@@ -151,14 +149,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
 
     const write = ($row, i, add) => {
         const tag = `[${tags[i].name}]`;
-        $row.find('a.rename-icon').first().trigger('click');
-        const $edit = $row.find('.quickedit-edit');
-        const $input = $edit.find('input[type=text]').first();
-        const current = $.trim($input.val() || label($row));
-        const next = (add ? `${current} ${tag}` : current.split(tag).join(' ')).replace(/\s+/g, ' ').trim();
-        $input.val(next);
-        $edit.find('input[type=button]').first().trigger('click');
-        $row.data('trName', next);
+        const name = TWK.rename($row, input => {
+            const current = input || label($row);
+            return (add ? `${current} ${tag}` : current.split(tag).join(' ')).replace(/\s+/g, ' ').trim();
+        });
+        $row.data('trName', name);
         paint($row);
     };
 
@@ -166,7 +161,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
 
     const hint = () => {
         const n = marked().length;
-        $hint.text(n ? `clique para aplicar em ${n} marcado${n === 1 ? '' : 's'}` : 'marque comandos na tabela');
+        $hint.text(n ? `clique para aplicar em ${TWK.plural(n, 'marcado', 'marcados')}` : 'marque comandos na tabela');
     };
 
     const mass = async i => {
@@ -182,9 +177,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         }
         $panel.removeClass('tr-busy');
         hint();
-        UI.SuccessMessage(add
-            ? `${pending.length} renomeado(s), ${rows.length - pending.length} já tinham a tag`
-            : `[${tags[i].name}] removida de ${pending.length} comando(s)`);
+        UI.SuccessMessage(`[${tags[i].name}] ${add ? 'aplicada em' : 'removida de'} ${TWK.plural(pending.length, 'comando', 'comandos')}`);
     };
 
     const pick = e => {

@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', dataType: 'script', cache: true }).then(async () => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(async () => {
     const KEY = `twTroopCounter_${game_data.world}`;
     const ROWS = '#units_table tbody.row_marker';
     const TYPES = [
@@ -18,7 +18,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
         width: 340,
         css: `
             #tc-panel .tc-units { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-            #tc-panel .tc-units .twk-loading { grid-column: 1 / -1; min-height: 174px; padding: 0; }
+            #tc-panel .tc-units .twk-loading, #tc-panel .tc-units .twk-empty { grid-column: 1 / -1; min-height: 174px; padding: 0; }
+            #tc-panel .tc-units .twk-empty { display: grid; place-items: center; }
             #tc-panel .tc-unit {
                 height: 30px; padding: 0 10px; display: flex; align-items: center; gap: 8px;
                 background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
@@ -83,14 +84,20 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
     const load = async group => {
         $controls.prop('disabled', true);
         busy('Carregando aldeias...');
-        const docs = await TWK.pages(`overview_villages&mode=units&type=complete&group=${group}`, {
-            rows: ROWS,
-            progress: (page, total) => busy(`Carregando página ${page} de ${total}...`),
-        });
-        state = { cols: columns(docs[0]), villages: new Map(docs.flatMap(villages)) };
-        $controls.prop('disabled', false);
-        render();
-        return docs[0];
+        try {
+            const docs = await TWK.pages(`overview_villages&mode=units&type=complete&group=${group}`, {
+                rows: ROWS,
+                progress: (page, total) => busy(`Carregando página ${page} de ${total}...`),
+            });
+            state = { cols: columns(docs[0]), villages: new Map(docs.flatMap(villages)) };
+            render();
+            return docs[0];
+        } catch {
+            $units.html('<div class="twk-empty">Não foi possível carregar as aldeias</div>');
+            return null;
+        } finally {
+            $controls.prop('disabled', false);
+        }
     };
 
     const copy = () => TWK.copy(totals().filter(col => col.amount).map(col => `[unit]${col.unit}[/unit] ${col.amount}`).join('\n'), 'BBCode copiado');
@@ -107,6 +114,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.0.0/twkit.js', 
 
     $type.val(saved.type || 0);
     const $doc = await load(saved.group || 0);
+    if (!$doc) return $group.prop('disabled', true).html('<option>Indisponível</option>');
     $group.html(groups($doc).map(([id, name]) => `<option value="${id}">${id === '0' ? 'Todas' : name}</option>`).join(''));
     $group.val($group.find(`option[value="${saved.group}"]`).length ? saved.group : '0');
 });
