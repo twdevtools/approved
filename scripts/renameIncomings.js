@@ -1,4 +1,11 @@
 (() => {
+    const page = game_data.screen === 'overview' || (game_data.screen === 'overview_villages' && game_data.mode === 'incomings');
+
+    if (!page) {
+        UI.InfoMessage('Redirecionando para os ataques chegando...');
+        return location.href = `${game_data.link_base_pure}overview_villages&mode=incomings&subtype=attacks`;
+    }
+
     const KEY = 'twRenamer';
     const LEGACY = 'renameIncomings';
     const TABLES = '#commands_incomings, #incomings_table';
@@ -18,6 +25,7 @@
     $('#tr-panel, #tr-style').remove();
     $(TABLES).find('tr.tr-row').remove();
     $(document).off('.tr');
+    $(TABLES).off('.tr');
 
     $(`<style id="tr-style">
         #tr-panel {
@@ -47,7 +55,8 @@
             display: flex; align-items: center; justify-content: space-between;
             color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
         }
-        #tr-panel .tr-count { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+        #tr-panel .tr-hint { margin: 0 auto 0 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+        #tr-panel .tr-hint::before { content: ''; width: 3px; height: 3px; border-radius: 50%; background: currentColor; transform: translateY(1px); }
         #tr-panel .tr-field { display: flex; align-items: center; gap: 12px; }
         #tr-panel .tr-caption { flex: none; color: var(--muted); font-size: 11px; white-space: nowrap; }
         #tr-panel .tr-add { justify-content: center; }
@@ -92,7 +101,7 @@
         }
         #tr-panel .tr-empty { grid-column: 1 / -1; align-self: center; color: var(--muted); text-align: center; }
         #tr-panel .tr-item { display: flex; align-items: center; min-width: 0; }
-        #tr-panel .tr-item .tr-chip { flex: 1; height: 26px; line-height: 26px; padding: 0 10px; border-radius: 0; }
+        #tr-panel .tr-item .tr-chip { flex: 1; height: 26px; padding: 0 10px; border-radius: 0; }
         #tr-panel .tr-item .tr-chip:hover { filter: brightness(1.15); }
         #tr-panel.tr-busy .tr-list { opacity: .5; pointer-events: none; }
         #tr-panel .tr-grip, #tr-panel .tr-remove {
@@ -106,11 +115,17 @@
         #tr-panel .tr-grip svg, #tr-panel .tr-remove svg { width: 11px; height: 11px; }
         #tr-panel .tr-remove:hover { background: var(--accent); }
         .tr-chip {
-            height: 22px; min-width: 0; padding: 0 8px; border: 0; border-radius: 4px;
-            font: 600 11px/22px ${FONT}; letter-spacing: .03em; text-align: center;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25);
+            height: 22px; min-width: 0; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            border: 0; border-radius: 4px; font: 600 11px/1 ${FONT}; letter-spacing: .03em;
+            cursor: pointer; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25);
         }
+        .tr-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .tr-row .tr-chip:hover { filter: brightness(1.15); }
+        .tr-row .tr-chip.tr-on::after {
+            content: ''; width: 8px; height: 8px; flex: none; opacity: .85;
+            background: linear-gradient(45deg, transparent 42%, currentColor 42% 58%, transparent 58%),
+                        linear-gradient(-45deg, transparent 42%, currentColor 42% 58%, transparent 58%);
+        }
         .tr-row td { padding: 3px 6px 6px !important; }
         tr[style*="none"] + .tr-row { display: none; }
         .tr-row .tr-bar { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -121,7 +136,7 @@
         <div class="tr-head">
             <div class="tr-logo">${ICON.tag}</div>
             <div class="tr-heading">
-                <div class="tr-title">Renomeador</div>
+                <div class="tr-title">Tags de Ataques</div>
                 <div class="tr-sub">Marque comandos e clique numa tag</div>
             </div>
             <button class="tr-close" title="Fechar">${ICON.close}</button>
@@ -140,7 +155,7 @@
             </div>
             <div class="tr-divider"></div>
             <div class="tr-section">
-                <div class="tr-label">Suas tags <span class="tr-count"></span></div>
+                <div class="tr-label">Suas tags <span class="tr-hint"></span></div>
                 <div class="tr-list"></div>
             </div>
         </div>
@@ -174,12 +189,11 @@
     };
 
     const chip = (tag, i) => $('<button class="tr-chip">')
-        .text(tag.name)
+        .append($('<span>').text(tag.name))
         .attr({ 'data-i': i, title: tag.name })
         .css({ background: tag.color, color: ink(tag.color) });
 
     const renderPanel = () => {
-        $panel.find('.tr-count').text(`${tags.length} tag${tags.length === 1 ? '' : 's'}`);
         if (!tags.length) return $list.html('<span class="tr-empty">Nenhuma tag criada</span>');
         $list.empty().append(tags.map((tag, i) => $('<div class="tr-item">').attr('data-i', i)
             .append(`<span class="tr-grip" title="Arrastar">${ICON.grip}</span>`, chip(tag, i), `<button class="tr-remove" title="Remover">${ICON.close}</button>`)));
@@ -189,8 +203,11 @@
         const $tables = $(TABLES);
         $tables.find('tr.tr-row').remove();
         if (!tags.length) return;
-        $tables.find(ROWS).each((_, row) => $('<tr class="tr-row"><td colspan="100"><div class="tr-bar"></div></td></tr>')
-            .insertAfter(row).find('.tr-bar').append(tags.map(chip)));
+        $tables.find(ROWS).each((_, row) => {
+            $('<tr class="tr-row"><td colspan="100"><div class="tr-bar"></div></td></tr>')
+                .insertAfter(row).find('.tr-bar').append(tags.map(chip));
+            paint($(row));
+        });
     };
 
     const render = () => {
@@ -210,37 +227,53 @@
 
     const wait = ms => new Promise(done => setTimeout(done, ms));
 
-    const apply = ($row, i) => {
+    const label = $row => $row.data('trName') ?? $.trim($row.find('.quickedit-label').first().text());
+
+    const has = ($row, i) => label($row).includes(`[${tags[i].name}]`);
+
+    const paint = $row => $row.next('.tr-row').find('.tr-chip').each((_, el) => {
+        const i = $(el).data('i');
+        const on = has($row, i);
+        $(el).toggleClass('tr-on', on).attr('title', on ? `Remover [${tags[i].name}]` : tags[i].name);
+    });
+
+    const write = ($row, i, add) => {
         const tag = `[${tags[i].name}]`;
         $row.find('a.rename-icon').first().trigger('click');
         const $edit = $row.find('.quickedit-edit');
         const $input = $edit.find('input[type=text]').first();
-        const $ok = $edit.find('input[type=button]').first();
-        const current = $.trim($input.val() || $row.find('.quickedit-label').first().text());
-        if (current.includes(tag)) {
-            $ok.trigger('click');
-            return false;
-        }
-        $input.val(`${current} ${tag}`.trim());
-        $ok.trigger('click');
-        return true;
+        const current = $.trim($input.val() || label($row));
+        const next = (add ? `${current} ${tag}` : current.split(tag).join(' ')).replace(/\s+/g, ' ').trim();
+        $input.val(next);
+        $edit.find('input[type=button]').first().trigger('click');
+        $row.data('trName', next);
+        paint($row);
+    };
+
+    const marked = () => $(TABLES).find(ROWS).filter((_, row) => $(row).find('input[type=checkbox]').is(':checked')).get().map(row => $(row));
+
+    const hint = () => {
+        const n = marked().length;
+        $panel.find('.tr-hint').text(n ? `clique para aplicar em ${n} marcado${n === 1 ? '' : 's'}` : 'marque comandos na tabela');
     };
 
     const mass = async i => {
-        const $rows = $(TABLES).find(ROWS).filter((_, row) => $(row).find('input[type=checkbox]').is(':checked'));
-        if (!$rows.length) return UI.InfoMessage('Marque os comandos na tabela primeiro');
-        const $count = $panel.find('.tr-count');
-        const total = $rows.length;
-        let renamed = 0;
+        const rows = marked();
+        if (!rows.length) return UI.InfoMessage('Marque os comandos na tabela primeiro');
+        const add = !rows.every($row => has($row, i));
+        const pending = rows.filter($row => has($row, i) !== add);
+        const $hint = $panel.find('.tr-hint');
         $panel.addClass('tr-busy');
-        for (const [n, row] of $rows.get().entries()) {
-            $count.text(`Aplicando ${n + 1}/${total}`);
-            if (apply($(row), i)) renamed++;
+        for (const [n, $row] of pending.entries()) {
+            $hint.text(`${add ? 'Aplicando' : 'Removendo'} ${n + 1}/${pending.length}`);
+            write($row, i, add);
             await wait(DELAY);
         }
         $panel.removeClass('tr-busy');
-        renderPanel();
-        UI.SuccessMessage(`${renamed} renomeado(s), ${total - renamed} já tinham a tag`);
+        hint();
+        UI.SuccessMessage(add
+            ? `${pending.length} renomeado(s), ${rows.length - pending.length} já tinham a tag`
+            : `[${tags[i].name}] removida de ${pending.length} comando(s)`);
     };
 
     const close = () => {
@@ -248,6 +281,7 @@
         $('#tr-style').remove();
         $(TABLES).find('tr.tr-row').remove();
         $(document).off('.tr');
+        $(TABLES).off('.tr');
     };
 
     $panel.on('click', '.tr-close', close);
@@ -267,11 +301,14 @@
         render();
     });
 
+    $(TABLES).on('change.tr click.tr', 'input[type=checkbox]', () => setTimeout(hint));
+
     $(document).on('click.tr', '.tr-row .tr-chip', e => {
         e.preventDefault();
         const $btn = $(e.currentTarget);
+        const $row = $btn.closest('tr.tr-row').prev();
         const i = $btn.data('i');
-        if (!apply($btn.closest('tr.tr-row').prev(), i)) UI.InfoMessage(`O comando já tem [${tags[i].name}]`);
+        write($row, i, !has($row, i));
     });
 
     if ($.fn.draggable) $panel.draggable({ handle: '.tr-head', cancel: '.tr-close', containment: 'window' });
@@ -290,4 +327,5 @@
 
     $panel.find('.tr-color').first().addClass('tr-active');
     render();
+    hint();
 })();
