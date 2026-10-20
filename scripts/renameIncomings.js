@@ -157,7 +157,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', 
         paint($row);
     };
 
-    const marked = () => $(TABLES).find(ROWS).filter((_, row) => $(row).find('input[type=checkbox]').is(':checked')).get().map(row => $(row));
+    const marked = () => $(TABLES).find(ROWS).filter(':visible').filter((_, row) => $(row).find('input[type=checkbox]').is(':checked')).get().map(row => $(row));
 
     const hint = () => {
         const n = marked().length;
