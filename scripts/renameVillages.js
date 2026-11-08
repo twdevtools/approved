@@ -39,6 +39,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', 
                     <div class="twk-field"><span class="twk-caption">Dígitos</span>${TWK.number('rv-digits', { min: 1, max: 5, value: 3 })}</div>
                 </div>
                 ${TWK.check('rv-per', 'Reiniciar a cada continente')}
+                ${TWK.check('rv-keep', 'Manter quem já está no formato')}
             </div>
             <button class="twk-btn twk-primary rv-run">${TWK.ICON.pen}Renomear aldeias</button>
         `,
@@ -48,6 +49,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', 
     const $start = $panel.find('.rv-start');
     const $digits = $panel.find('.rv-digits');
     const $per = $panel.find('.rv-per');
+    const $keep = $panel.find('.rv-keep');
     const $count = $panel.find('.rv-count');
     const $run = $panel.find('.rv-run');
     const $villages = $('.quickedit-vn');
@@ -57,6 +59,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', 
         start: Math.max(0, parseInt($start.val()) || 0),
         digits: Math.min(5, Math.max(1, parseInt($digits.val()) || 1)),
         per: $per.is(':checked'),
+        keep: $keep.is(':checked'),
     });
 
     const legacy = () => {
@@ -86,28 +89,107 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', 
 
     const counter = () => $count.text(TWK.plural($villages.length, 'aldeia', 'aldeias'));
 
+    const position = () => {
+        const $nav = $('.paged-nav-item');
+        const current = parseInt($nav.parent().find('strong').first().text().replace(/\D/g, '')) - 1;
+        const numbers = $nav.parent().find('a.paged-nav-item, option').get()
+            .map(el => +((el.getAttribute('href') || el.value).match(/page=(\d+)/) || [])[1])
+            .filter(n => !isNaN(n));
+        return { current, last: Math.max(current, ...numbers), base: $nav.attr('href') };
+    };
+
+    const load = async (from, to, base) => {
+        const villages = [];
+        for (let i = from; i < to; i++) {
+            const $doc = await TWK.doc(base.replace(/page=-?\d+/, `page=${i}`));
+            villages.push(...$doc.find('.quickedit-vn').get().map(el => info($(el))));
+        }
+        return villages;
+    };
+
+    const clean = text => text.replace(/\s+/g, ' ').trim();
+
+    const build = (opt, village, num) => {
+        const values = { '{num}': String(num).padStart(opt.digits, '0'), '{k}': village.k, '{nome}': village.name };
+        return clean(opt.format.replace(/\{(num|k|nome)\}/g, token => values[token])).slice(0, MAX);
+    };
+
+    const pattern = format => {
+        const parts = { '{num}': '(\\d+)', '{k}': 'K\\d+', '{nome}': '.*' };
+        const source = clean(format).split(/(\{num\}|\{k\}|\{nome\})/)
+            .map(part => parts[part] ?? part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .join('');
+        return new RegExp(`^${source}$`);
+    };
+
+    const sequence = (opt, before, here) => {
+        const next = {};
+        before.forEach(village => {
+            const group = opt.per ? village.k : 'all';
+            next[group] = (next[group] ?? opt.start) + 1;
+        });
+        return here.map(village => {
+            const group = opt.per ? village.k : 'all';
+            next[group] = next[group] ?? opt.start;
+            return { village, num: next[group]++ };
+        });
+    };
+
+    const keep = (opt, before, here, after) => {
+        const rx = pattern(opt.format);
+        const used = {};
+        const taken = village => {
+            const match = clean(village.name).match(rx);
+            if (!match) return false;
+            const unnumbered = match[1] === undefined;
+            if (unnumbered) return true;
+            const set = used[opt.per ? village.k : 'all'] ??= new Set();
+            const free = !set.has(+match[1]);
+            set.add(+match[1]);
+            return free;
+        };
+        before.forEach(taken);
+        const pending = here.filter(village => !taken(village));
+        after.forEach(taken);
+        return pending.map(village => {
+            const set = used[opt.per ? village.k : 'all'] ??= new Set();
+            let num = opt.start;
+            while (set.has(num)) num++;
+            set.add(num);
+            return { village, num };
+        });
+    };
+
     const rename = async () => {
         const opt = read();
         if (!opt.format) return UI.InfoMessage('Defina o formato do nome');
         if (!$villages.length) return UI.ErrorMessage('Nenhuma aldeia encontrada nesta página');
         TWK.store.set(KEY, opt);
-        const total = $villages.length;
-        const seq = {};
+        const here = $villages.get().map(el => ({ ...info($(el)), $el: $(el) }));
+        const pos = position();
+        const paged = pos.current >= 0;
         $run.prop('disabled', true);
-        for (const [i, el] of $villages.get().entries()) {
-            const $village = $(el);
-            const village = info($village);
-            const group = opt.per ? village.k : 'all';
-            seq[group] = seq[group] ?? opt.start;
-            const values = { '{num}': String(seq[group]++).padStart(opt.digits, '0'), '{k}': village.k, '{nome}': village.name };
-            const name = opt.format.replace(/\{(num|k|nome)\}/g, token => values[token]).replace(/\s+/g, ' ').trim().slice(0, MAX);
-            $count.text(`Renomeando ${i + 1}/${total}`);
-            TWK.rename($village, () => name);
+        $count.text('Lendo as outras páginas...');
+        let before;
+        let after;
+        try {
+            before = paged ? await load(0, pos.current, pos.base) : [];
+            after = paged && opt.keep ? await load(pos.current + 1, pos.last + 1, pos.base) : [];
+        } catch {
+            $run.prop('disabled', false);
+            counter();
+            return UI.ErrorMessage('Não foi possível ler as outras páginas');
+        }
+        const targets = opt.keep ? keep(opt, before, here, after) : sequence(opt, before, here);
+        for (const [i, target] of targets.entries()) {
+            const name = build(opt, target.village, target.num);
+            $count.text(`Renomeando ${i + 1}/${targets.length}`);
+            TWK.rename(target.village.$el, () => name);
             await TWK.wait(200);
         }
         $run.prop('disabled', false);
         counter();
-        UI.SuccessMessage(TWK.plural(total, 'aldeia renomeada', 'aldeias renomeadas'));
+        UI.SuccessMessage(targets.length ? TWK.plural(targets.length, 'aldeia renomeada', 'aldeias renomeadas') : 'Todas as aldeias já estão no formato');
     };
 
     $panel.on('click', '.rv-token', e => insert($(e.currentTarget).data('token')));
@@ -123,6 +205,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', 
         $start.val(saved.start);
         $digits.val(saved.digits);
         $per.prop('checked', saved.per);
+        $keep.prop('checked', !!saved.keep);
     }
 
     counter();
