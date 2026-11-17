@@ -87,13 +87,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .sm-row.sm-chosen { background: rgba(255, 214, 10, .07); }
             #sm-panel .sm-remove { border-color: var(--accent); color: #f08a8a; }
             #sm-panel .sm-remove:hover { background: var(--accent); color: #fff; }
-            #sm-panel .sm-armed, #sm-panel .sm-armed:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
             #sm-panel .sm-del {
                 width: 24px; height: 24px; padding: 0; display: grid; place-items: center; justify-self: end;
                 background: none; border: 1px solid transparent; border-radius: 4px; color: var(--muted); cursor: pointer;
             }
             #sm-panel .sm-del:hover { color: #f08a8a; border-color: var(--line-hi); }
-            #sm-panel .sm-del.sm-armed { width: auto; padding: 0 8px; position: relative; z-index: 1; white-space: nowrap; font-size: 11px; }
         `,
         body: '<div class="sm-content"></div>',
     });
@@ -287,6 +285,20 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             : { width: scale[0], height: scale[1], border: `3px solid ${color}`, outline: '1px solid #000', background: selected ? 'rgba(255, 214, 10, .45)' : 'rgba(255, 255, 255, .35)', zIndex: 5 };
     };
 
+    const short = n => {
+        if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')}M`;
+        if (n >= 1e3) return `${Math.round(n / 1e3)}k`;
+        return String(n);
+    };
+
+    const badge = v => $('<div>')
+        .css({
+            position: 'absolute', left: '50%', bottom: 2, transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 2, padding: '0 3px', borderRadius: 3,
+            background: 'rgba(0, 0, 0, .78)', color: '#fff', font: '700 10px/14px system-ui, sans-serif', whiteSpace: 'nowrap',
+        })
+        .append($(`<img src="${window.image_base}buildings/farm.webp" alt="">`).css({ width: 11, height: 11 }), short(pop(v.troops)));
+
     const mark = sector => {
         const map = sector._map;
         const span = map.sectorSize;
@@ -295,9 +307,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         Object.entries(data.villages)
             .filter(([, v]) => v.x >= sector.x && v.x < sector.x + span && v.y >= sector.y && v.y < sector.y + span)
             .forEach(([id, v]) => {
-                const el = $(`<div class="sm-mark" data-id="${id}" data-kind="${kind}">`)
-                    .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, chosen.has(id)) })[0];
-                sector.appendElement(el, v.x - sector.x, v.y - sector.y);
+                const $el = $(`<div class="sm-mark" data-id="${id}" data-kind="${kind}">`)
+                    .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, chosen.has(id)) });
+                if (kind === 'main') $el.append(badge(v));
+                sector.appendElement($el[0], v.x - sector.x, v.y - sector.y);
             });
     };
 
@@ -337,7 +350,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
     const removal = () => `${TWK.ICON.clear}${chosen.size ? `Retirar das selecionadas (${chosen.size})` : 'Selecione aldeias'}`;
 
     const refresh = () => {
-        $panel.find('.sm-remove:not(.sm-armed)').html(removal()).prop('disabled', !chosen.size);
+        $panel.find('.sm-remove').html(removal()).prop('disabled', !chosen.size);
         $panel.find('.sm-check-all').prop('checked', visible().every(v => chosen.has(v.id)));
         restyle();
     };
@@ -348,14 +361,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         else chosen.delete(id);
         $panel.find(`.sm-row[data-id="${id}"]`).toggleClass('sm-chosen', on).find('.sm-check').prop('checked', on);
         refresh();
-    };
-
-    const arm = ($btn, label, action) => {
-        const armed = $btn.hasClass('sm-armed');
-        if (armed) return action();
-        const html = $btn.html();
-        $btn.addClass('sm-armed').text(label);
-        setTimeout(() => $btn.removeClass('sm-armed').html(html), 4000);
     };
 
     const withdraw = async id => {
@@ -408,10 +413,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
     $panel.on('click', '.sm-player', e => select('player', String($(e.currentTarget).data('player'))));
     $panel.on('click', '.sm-link', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
-    $panel.on('click', '.sm-remove', e => {
-        const ids = [...chosen];
-        arm($(e.currentTarget), `Confirmar: retirar ${pick.percent}% de ${TWK.plural(ids.length, 'aldeia', 'aldeias')}`, () => remove(ids));
-    });
+    $panel.on('click', '.sm-remove', () => remove([...chosen]));
     $panel.on('click', '.sm-row .sm-check', e => {
         e.stopPropagation();
         toggle(String($(e.currentTarget).closest('.sm-row').data('id')));
@@ -441,7 +443,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
     });
     $panel.on('click', '.sm-del', e => {
         e.stopPropagation();
-        arm($(e.currentTarget), 'Confirmar?', () => remove([String($(e.currentTarget).closest('.sm-row').data('id'))]));
+        remove([String($(e.currentTarget).closest('.sm-row').data('id'))]);
     });
 
     render();
