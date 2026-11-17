@@ -477,12 +477,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             for (const id of ids) {
                 $panel.find('.sm-remove').text(`Retirando ${done + 1} de ${ids.length}...`);
                 await withdraw(id);
+                TWK.store.set(KEY, data);
                 done++;
             }
         } catch {
             UI.ErrorMessage('Não foi possível remover todos os apoios');
         }
-        TWK.store.set(KEY, data);
         chosen.clear();
         render();
         if (onMap()) TWMap.reload();
