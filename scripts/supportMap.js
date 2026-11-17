@@ -14,7 +14,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         title: 'Apoios Enviados',
         sub: 'Aldeias que você está apoiando',
         icon: TWK.ICON.target,
-        width: 940,
+        width: 1020,
         fold: true,
         actions: `<button class="twk-icon sm-refresh" title="Atualizar">${TWK.ICON.refresh}</button>`,
         onClose: () => {
@@ -45,16 +45,17 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
             #sm-panel .sm-player > b { flex: none; min-width: 28px; padding: 1px 6px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; text-align: center; }
             #sm-panel .sm-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
             #sm-panel .sm-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-            #sm-panel .sm-head, #sm-panel .sm-row, #sm-panel .sm-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 16px; padding: 0 16px; }
+            #sm-panel .sm-head, #sm-panel .sm-row, #sm-panel .sm-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 12px; padding: 0 16px; }
+            #sm-panel .sm-head, #sm-panel .sm-foot { padding-right: 26px; }
             #sm-panel .sm-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
             #sm-panel .sm-head img { width: 18px; height: 18px; justify-self: end; }
-            #sm-panel .sm-body { flex: 1; min-height: 0; overflow: auto; }
+            #sm-panel .sm-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
             #sm-panel .sm-row { height: 40px; border-bottom: 1px solid var(--line); }
             #sm-panel .sm-row:last-child { border-bottom: 0; }
             #sm-panel .sm-row.sm-link { cursor: pointer; }
             #sm-panel .sm-row.sm-link:hover { background: var(--hover); }
             #sm-panel .sm-foot { height: 42px; flex: none; background: var(--surface); border-top: 1px solid var(--line); font-weight: 600; }
-            #sm-panel .sm-num { text-align: right; font-family: ui-monospace, Consolas, monospace; }
+            #sm-panel .sm-num { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-family: ui-monospace, Consolas, monospace; }
             #sm-panel .sm-zero { color: var(--line-hi); }
             #sm-panel .sm-owner { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
             #sm-panel .sm-pop { color: var(--text); font-weight: 600; }
@@ -156,7 +157,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const link = onMap();
-        const cols = `72px minmax(110px, 1fr) repeat(${columns.length}, minmax(64px, auto)) 96px`;
+        const cols = `68px minmax(90px, 1.3fr) repeat(${columns.length}, minmax(0, 1fr)) 92px`;
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
