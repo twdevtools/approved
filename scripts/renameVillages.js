@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.0/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview_villages';
     if (!page) return TWK.redirect('overview_villages&mode=combined&group=0', 'Redirecionando para a visualização de aldeias...');
 

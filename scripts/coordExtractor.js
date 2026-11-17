@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.1.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.0/twkit.js', dataType: 'script', cache: true }).then(() => {
     const RX = /(?<!\d)\d{1,3}\|\d{1,3}(?!\d)/g;
     const SEPARATORS = { line: '\n', space: ' ', comma: ',' };
 

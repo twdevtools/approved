@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.1.0';
+    const VERSION = '1.2.0';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -7,6 +7,7 @@
     const GAP = 200;
     const TZ_STEP = 15 * 60 * 1000;
     const POS_KEY = 'twkPositions';
+    const FOLD_KEY = 'twkFolded';
     const CHECK = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E\")";
     const CHEVRON = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f7580' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
 
@@ -44,6 +45,9 @@
         .twk-panel svg { display: block; flex: none; }
         .twk-panel button, .twk-panel input, .twk-panel select, .twk-panel textarea { font: inherit; color: inherit; }
         .twk-panel .twk-mono { font-family: ${MONO}; }
+        .twk-panel.twk-folded { width: auto !important; }
+        .twk-panel.twk-folded .twk-body { display: none; }
+        .twk-panel.twk-folded .twk-head { border-bottom: 0; }
         .twk-panel .twk-head {
             display: flex; align-items: center; gap: 10px;
             padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: move; user-select: none;
@@ -135,10 +139,11 @@
         .twk-panel .twk-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 0; color: var(--muted); font-size: 11px; }
         .twk-panel .twk-spin { width: 20px; height: 20px; border: 2px solid var(--line-hi); border-top-color: var(--accent); border-radius: 50%; }
         .twk-panel .twk-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; }
-        .twk-panel ::-webkit-scrollbar { width: 8px; height: 8px; }
+        .twk-panel ::-webkit-scrollbar { width: 10px; height: 10px; }
         .twk-panel ::-webkit-scrollbar-track, .twk-panel ::-webkit-scrollbar-corner { background: transparent; }
-        .twk-panel ::-webkit-scrollbar-thumb { background: var(--thumb); border-radius: 4px; }
-        .twk-panel ::-webkit-scrollbar-thumb:hover { background: var(--line-hi); }
+        .twk-panel ::-webkit-scrollbar-thumb { background: var(--thumb) padding-box; border: 3px solid transparent; border-radius: 10px; min-height: 32px; }
+        .twk-panel ::-webkit-scrollbar-thumb:hover { background-color: var(--line-hi); }
+        .twk-panel ::-webkit-scrollbar-button { display: none; }
         @supports not selector(::-webkit-scrollbar) {
             .twk-panel * { scrollbar-width: thin; scrollbar-color: var(--thumb) transparent; }
         }
@@ -254,6 +259,14 @@
         if (fits) $panel.css(pos);
     };
 
+    const fold = ($panel, folded) => {
+        const state = store.get(FOLD_KEY, {});
+        state[$panel.attr('id')] = folded;
+        store.set(FOLD_KEY, state);
+        $panel.toggleClass('twk-folded', folded);
+        $panel.find('.twk-fold').html(folded ? ICON.down : ICON.up).attr('title', folded ? 'Expandir' : 'Minimizar');
+    };
+
     const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', onClose }) => {
         $(`#${id}`).each((_, el) => $(el).data('twkClose')());
         const $panel = $(`<div id="${id}" class="twk-panel" style="width: ${width}px">
@@ -265,6 +278,7 @@
                     <div class="twk-sub">${sub}</div>
                 </div>
                 ${actions}
+                <button class="twk-icon twk-fold"></button>
                 <button class="twk-icon twk-close" title="Fechar">${ICON.close}</button>
             </div>
             <div class="twk-body">${body}</div>
@@ -274,6 +288,8 @@
             $panel.remove();
         };
         $panel.data('twkClose', close).on('click', '.twk-close', close);
+        $panel.on('click', '.twk-fold', () => fold($panel, !$panel.hasClass('twk-folded')));
+        fold($panel, !!store.get(FOLD_KEY, {})[id]);
         if (window.mobiledevice) return $panel.addClass('twk-center');
         restore($panel);
         if ($.fn.draggable) $panel.draggable({ handle: '.twk-head', cancel: '.twk-icon', containment: 'window', stop: () => remember($panel) });
