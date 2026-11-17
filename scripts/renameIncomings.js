@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.4/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.5/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview' || (game_data.screen === 'overview_villages' && game_data.mode === 'incomings');
     if (!page) return TWK.redirect('overview_villages&mode=incomings&subtype=attacks', 'Redirecionando para os ataques chegando...');
 
@@ -102,7 +102,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.4/twkit.js', 
 
     const chip = (tag, i) => $('<button class="tr-chip">')
         .append($('<span>').text(tag.name))
-        .attr({ 'data-i': i, title: tag.name })
+        .attr({ 'data-i': i, 'data-tip': tag.name })
         .css({ background: tag.color, color: ink(tag.color) });
 
     const label = $row => $row.data('trName') ?? $.trim($row.find('.quickedit-label').first().text());
@@ -112,13 +112,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.4/twkit.js', 
     const paint = $row => $row.next('.tr-row').find('.tr-chip').each((_, el) => {
         const i = $(el).data('i');
         const on = has($row, i);
-        $(el).toggleClass('tr-on', on).attr('title', on ? `Remover [${tags[i].name}]` : tags[i].name);
+        $(el).toggleClass('tr-on', on).attr('data-tip', on ? `Remover [${tags[i].name}]` : tags[i].name);
     });
 
     const renderPanel = () => {
         if (!tags.length) return $list.html('<span class="twk-empty">Nenhuma tag criada</span>');
         $list.empty().append(tags.map((tag, i) => $('<div class="tr-item">').attr('data-i', i)
-            .append(`<span class="tr-grip" title="Arrastar">${TWK.ICON.grip}</span>`, chip(tag, i), `<button class="tr-remove" title="Remover">${TWK.ICON.close}</button>`)));
+            .append(`<span class="tr-grip" data-tip="Arrastar">${TWK.ICON.grip}</span>`, chip(tag, i), `<button class="tr-remove" data-tip="Remover">${TWK.ICON.close}</button>`)));
     };
 
     const renderRows = () => {

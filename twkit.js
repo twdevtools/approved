@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.4';
+    const VERSION = '1.2.5';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -32,6 +32,18 @@
     };
 
     const CSS = `
+        .twk-dock {
+            display: grid; place-items: center; box-sizing: border-box; cursor: pointer;
+            background: #0d0e11 !important; border: 1px solid #3a3e47; border-radius: 6px; color: #a33b3b;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .45);
+        }
+        .twk-dock:hover { border-color: #a33b3b; }
+        .twk-dock svg { width: 20px; height: 20px; display: block; }
+        .twk-tip {
+            position: fixed; z-index: 13000; max-width: 260px; padding: 5px 9px; pointer-events: none;
+            background: #15171c; color: #d4d7dd; border: 1px solid #3a3e47; border-radius: 6px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, .5); font: 11px/1.4 ${FONT};
+        }
         .twk-panel {
             --bg: #0d0e11; --surface: #15171c; --hover: #1b1e24; --line: #262930; --line-hi: #3a3e47; --thumb: #2e323a;
             --text: #d4d7dd; --muted: #6f7580; --accent: #a33b3b; --ok: #4f9a5b; --warn: #e0a44a;
@@ -274,15 +286,14 @@
 
     const dock = ($panel, folded) => {
         const id = $panel.attr('id');
-        const image = $panel.data('twkDock');
+        const enabled = $panel.data('twkDock');
         const $log = $('.questlog').first();
-        const docked = folded && !!image && !!$log.length;
+        const docked = folded && enabled && !!$log.length;
         $(`#${id}-dock`).remove();
         $panel.toggle(!docked);
         if (!docked) return;
-        $(`<div class="quest" id="${id}-dock">`)
-            .attr('title', $panel.find('.twk-title').text())
-            .css({ backgroundImage: `url("${image}")`, backgroundSize: '70%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' })
+        $(`<div class="quest twk-dock" id="${id}-dock">`)
+            .html($panel.find('.twk-logo').html())
             .on('click', () => collapse($panel, false))
             .appendTo($log);
     };
@@ -292,7 +303,7 @@
         state[$panel.attr('id')] = folded;
         store.set(FOLD_KEY, state);
         $panel.toggleClass('twk-folded', folded);
-        $panel.find('.twk-fold').html(folded ? ICON.down : ICON.up).attr('title', folded ? 'Expandir' : 'Minimizar');
+        $panel.find('.twk-fold').html(folded ? ICON.down : ICON.up).attr('data-tip', folded ? 'Expandir' : 'Minimizar');
         dock($panel, folded);
     };
 
@@ -302,7 +313,7 @@
         place($panel);
     };
 
-    const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', fold = false, dock: image = '', onClose }) => {
+    const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', fold = false, dock = false, onClose }) => {
         $(`#${id}`).each((_, el) => $(el).data('twkClose')());
         const $panel = $(`<div id="${id}" class="twk-panel" style="width: ${width}px">
             <style>${css}</style>
@@ -314,7 +325,7 @@
                 </div>
                 ${actions}
                 ${fold ? '<button class="twk-icon twk-fold"></button>' : ''}
-                <button class="twk-icon twk-close" title="Fechar">${ICON.close}</button>
+                <button class="twk-icon twk-close" data-tip="Fechar">${ICON.close}</button>
             </div>
             <div class="twk-body">${body}</div>
         </div>`).appendTo('body');
@@ -323,7 +334,7 @@
             $(`#${id}-dock`).remove();
             $panel.remove();
         };
-        $panel.data({ twkClose: close, twkDock: image }).on('click', '.twk-close', close);
+        $panel.data({ twkClose: close, twkDock: dock }).on('click', '.twk-close', close);
         $panel.on('click', '.twk-fold', () => collapse($panel, !$panel.hasClass('twk-folded')));
         if (fold) toggle($panel, !!store.get(FOLD_KEY, {})[id]);
         if (window.mobiledevice) return $panel.addClass('twk-center');
@@ -335,6 +346,23 @@
     $('#twk-style').remove();
     $(`<style id="twk-style">${CSS}</style>`).appendTo('head');
     $(document).off('click.twk').on('click.twk', '.twk-panel .twk-step', e => step(e.currentTarget));
+
+    $('.twk-tip').remove();
+    const $tip = $('<div class="twk-tip">').hide().appendTo('body');
+    const tip = e => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        $tip.text(e.currentTarget.dataset.tip).show();
+        const width = $tip.outerWidth();
+        const height = $tip.outerHeight();
+        const below = rect.bottom + 6 + height < innerHeight;
+        $tip.css({
+            left: Math.min(innerWidth - width - 8, Math.max(8, rect.left + rect.width / 2 - width / 2)),
+            top: below ? rect.bottom + 6 : rect.top - height - 6,
+        });
+    };
+    $(document).off('.twktip')
+        .on('mouseenter.twktip', '[data-tip]', tip)
+        .on('mouseleave.twktip mousedown.twktip', '[data-tip]', () => $tip.hide());
 
     window.TWK = {
         version: VERSION,

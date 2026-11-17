@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.4/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.5/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview';
     if (!page) return TWK.redirect('overview', 'Redirecionando para a visualização da aldeia...');
 
@@ -18,8 +18,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.4/twkit.js', 
         icon: TWK.ICON.target,
         width: 330,
         actions: `
-            <button class="twk-icon sc-test" title="Modo teste: qualquer comando chegando conta como nobre">${TWK.ICON.flask}</button>
-            <button class="twk-icon sc-refresh" title="Atualizar">${TWK.ICON.refresh}</button>
+            <button class="twk-icon sc-test" data-tip="Modo teste: qualquer comando chegando conta como nobre">${TWK.ICON.flask}</button>
+            <button class="twk-icon sc-refresh" data-tip="Atualizar">${TWK.ICON.refresh}</button>
         `,
         onClose: () => {
             clearInterval(ticker);
