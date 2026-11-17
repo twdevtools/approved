@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.5/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', dataType: 'script', cache: true }).then(() => {
     const KEY = `twSupportMap_${game_data.world}`;
     const GOAL_KEY = `twSupportMapGoal_${game_data.world}`;
     const BASE = '#ffffff';

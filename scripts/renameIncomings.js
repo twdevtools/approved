@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.5/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview' || (game_data.screen === 'overview_villages' && game_data.mode === 'incomings');
     if (!page) return TWK.redirect('overview_villages&mode=incomings&subtype=attacks', 'Redirecionando para os ataques chegando...');
 

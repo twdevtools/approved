@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.5';
+    const VERSION = '1.2.6';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -33,12 +33,12 @@
 
     const CSS = `
         .twk-dock {
-            display: grid; place-items: center; box-sizing: border-box; cursor: pointer;
-            background: #0d0e11 !important; border: 1px solid #3a3e47; border-radius: 6px; color: #a33b3b;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .45);
+            width: 25px; height: 25px; padding: 0; display: flex; align-items: center; justify-content: center; line-height: 0; cursor: pointer;
+            background: #0d0e11 !important; border: 1px solid #3a3e47; border-radius: 3px; color: #a33b3b;
+            box-shadow: rgba(0, 0, 0, .6) 2px 2px 2px;
         }
         .twk-dock:hover { border-color: #a33b3b; }
-        .twk-dock svg { width: 20px; height: 20px; display: block; }
+        .twk-dock svg { width: 15px; height: 15px; margin: 0; display: block; flex: none; }
         .twk-tip {
             position: fixed; z-index: 13000; max-width: 260px; padding: 5px 9px; pointer-events: none;
             background: #15171c; color: #d4d7dd; border: 1px solid #3a3e47; border-radius: 6px;
