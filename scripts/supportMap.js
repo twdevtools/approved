@@ -1,5 +1,14 @@
 $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', dataType: 'script', cache: true }).then(() => {
     const KEY = `twSupportMap_${game_data.world}`;
+    const GOAL_KEY = `twSupportMapGoal_${game_data.world}`;
+    const BASE = '#ffffff';
+    const CHOSEN = '#0a84ff';
+    const TIERS = [
+        { min: 1, color: '#30d158' },
+        { min: .5, color: '#ffd60a' },
+        { min: .25, color: '#ff9f0a' },
+        { min: 0, color: '#ff453a' },
+    ];
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
     const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 6, ram: 5, catapult: 8, knight: 10, snob: 100 };
@@ -36,6 +45,26 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .sm-progress i { flex: 1; height: 4px; border-radius: 2px; background: var(--surface); overflow: hidden; }
             #sm-panel .sm-progress b { display: block; width: 0; height: 100%; background: var(--accent); transition: width .3s; }
             #sm-panel .sm-reading .sm-stats, #sm-panel .sm-reading .sm-main { opacity: .45; pointer-events: none; }
+            #sm-panel .sm-tool.sm-goalset { color: #30d158; }
+            #sm-panel .sm-goalrow {
+                flex: none; padding: 8px 12px; display: flex; align-items: center; gap: 18px;
+                background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+            }
+            #sm-panel .sm-goalrow[hidden] { display: none; }
+            #sm-panel .sm-goalrow-field { flex: none; display: flex; align-items: center; gap: 8px; }
+            #sm-panel .sm-goalrow-field .twk-number { width: 120px; flex: none; }
+            #sm-panel .sm-tiers { flex: 1; min-width: 0; display: flex; gap: 8px; }
+            #sm-panel .sm-tier {
+                height: 26px; padding: 0 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;
+                background: none; border: 1px solid var(--line); border-radius: 13px; cursor: pointer;
+            }
+            #sm-panel .sm-tier:hover { border-color: var(--line-hi); background: var(--hover); }
+            #sm-panel .sm-tier.sm-active { border-color: var(--tier); background: var(--hover); }
+            #sm-panel .sm-tier i { width: 10px; height: 10px; flex: none; border-radius: 50%; border: 1px solid #000; }
+            #sm-panel .sm-tier span { color: var(--muted); }
+            #sm-panel .sm-tier b { font-weight: 600; }
+            #sm-panel .sm-tiers small { color: var(--muted); font-size: 11px; }
+            #sm-panel .sm-row.sm-chosen { background: rgba(10, 132, 255, .1); }
             #sm-panel .sm-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
             #sm-panel .sm-stat { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); }
             #sm-panel .sm-stat:last-child { border-right: 0; }
@@ -73,7 +102,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .twk-btn { white-space: nowrap; }
             #sm-panel .sm-tools { display: flex; gap: 6px; }
             #sm-panel .sm-tool { width: 32px; padding: 0; }
-            #sm-panel .sm-tool.sm-active { border-color: #ffd60a; color: #ffd60a; }
+            #sm-panel .sm-tool.sm-active { border-color: #0a84ff; color: #0a84ff; }
             #sm-panel .sm-pick { display: flex; align-items: center; gap: 6px; }
             #sm-panel .sm-pick .sm-tools { margin-left: auto; }
             #sm-panel .sm-pick .twk-caption { margin-right: 4px; }
@@ -84,7 +113,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .sm-toggle img { width: 18px; height: 18px; }
             #sm-panel .sm-toggle.sm-on { opacity: 1; border-color: var(--accent); }
             #sm-panel .sm-percent { width: 96px; margin-left: 8px; }
-            #sm-panel .sm-row.sm-chosen { background: rgba(255, 214, 10, .07); }
             #sm-panel .sm-remove { border-color: var(--accent); color: #f08a8a; }
             #sm-panel .sm-remove:hover { background: var(--accent); color: #fff; }
             #sm-panel .sm-del {
@@ -98,8 +126,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
 
     const $content = $panel.find('.sm-content');
     const $refresh = $panel.find('.sm-refresh');
-    const view = { ally: ALL, player: ALL };
+    const view = { ally: ALL, player: ALL, tier: ALL };
     const pick = { off: new Set(), percent: 100 };
+    let goal = TWK.store.get(GOAL_KEY, 0);
+    let goalOpen = false;
     const chosen = new Set();
     const scales = {};
     let picking = false;
@@ -185,7 +215,42 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
 
     const inAlly = v => view.ally === ALL || v.ally === view.ally;
 
-    const visible = () => Object.entries(data.villages).map(([id, v]) => ({ ...v, id })).filter(v => inAlly(v) && (view.player === ALL || v.player === view.player));
+    const scope = () => Object.entries(data.villages).map(([id, v]) => ({ ...v, id })).filter(v => inAlly(v) && (view.player === ALL || v.player === view.player));
+
+    const visible = () => scope().filter(v => !goal || view.tier === ALL || tier(v.id) === view.tier);
+
+    const bounds = i => ({
+        low: TWK.format(Math.ceil(goal * TIERS[i].min)),
+        high: i ? TWK.format(Math.ceil(goal * TIERS[i - 1].min) - 1) : '',
+        next: i ? TWK.format(Math.ceil(goal * TIERS[i - 1].min)) : '',
+    });
+
+    const range = i => {
+        const b = bounds(i);
+        if (!i) return `${b.low}+`;
+        if (!TIERS[i].min) return `< ${b.next}`;
+        return `${b.low}–${b.high}`;
+    };
+
+    const describe = (i, count) => {
+        const b = bounds(i);
+        const villages = TWK.plural(count, 'aldeia', 'aldeias');
+        if (!i) return `${villages} com ${b.low} ou mais de população`;
+        if (!TIERS[i].min) return `${villages} com menos de ${b.next} de população`;
+        return `${villages} com ${b.low} a ${b.high} de população`;
+    };
+
+    const tiers = () => {
+        if (!goal) return '<small>Defina a população por aldeia para colorir o mapa.</small>';
+        const list = scope();
+        return TIERS.map((t, i) => {
+            const count = list.filter(v => tier(v.id) === t.color).length;
+            return `<button class="sm-tier${view.tier === t.color ? ' sm-active' : ''}" style="--tier: ${t.color}" data-tier="${t.color}" title="${describe(i, count)}">
+                <i style="background: ${t.color}"></i><span>${range(i)}</span><b class="twk-mono">${TWK.format(count)}</b>
+            </button>`;
+        }).join('');
+    };
+
 
     const stat = (label, value) => `<div class="sm-stat"><span>${label}</span><b class="twk-mono">${value}</b></div>`;
 
@@ -245,8 +310,16 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
                         <div class="sm-tools">
                             ${link ? `<button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" title="Selecionar no mapa">${TWK.ICON.target}</button>` : ''}
                             <button class="twk-btn sm-tool sm-copy" title="Copiar coordenadas">${TWK.ICON.copy}</button>
+                            <button class="twk-btn sm-tool sm-goalbtn${goal ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" title="Meta de população">${TWK.ICON.chart}</button>
                             <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
                         </div>
+                    </div>
+                    <div class="sm-goalrow"${goalOpen ? '' : ' hidden'}>
+                        <div class="sm-goalrow-field">
+                            <span class="twk-label">Meta</span>
+                            ${TWK.number('sm-goal-input', { min: 0, step: 1000, value: goal })}
+                        </div>
+                        <div class="sm-tiers">${tiers()}</div>
                     </div>
                     <div class="sm-table" style="--cols: ${cols}">
                         <div class="sm-head">
@@ -276,14 +349,23 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         `);
     };
 
-    const look = (kind, selected) => {
+    const tier = id => {
+        const village = data.villages[id];
+        const ratio = village && goal ? pop(village.troops) / goal : -1;
+        return TIERS.find(t => ratio >= t.min)?.color || BASE;
+    };
+
+    const tone = id => chosen.has(id) ? CHOSEN : tier(id);
+
+    const look = (kind, id) => {
         const scale = scales[kind];
-        const color = selected ? '#ffd60a' : '#fff';
+        const color = tone(id);
         const dot = Math.max(...scale) * 2.4;
         return kind === 'mini'
             ? { width: dot, height: dot, marginLeft: (scale[0] - dot) / 2, marginTop: (scale[1] - dot) / 2, borderRadius: '50%', border: '2px solid #000', background: color, zIndex: 10 }
-            : { width: scale[0], height: scale[1], border: `3px solid ${color}`, outline: '1px solid #000', background: selected ? 'rgba(255, 214, 10, .45)' : 'rgba(255, 255, 255, .35)', zIndex: 5 };
+            : { width: scale[0], height: scale[1], border: `3px solid ${color}`, outline: '1px solid #000', background: `${color}73`, zIndex: 5 };
     };
+
 
     const short = n => {
         if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')}M`;
@@ -308,13 +390,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             .filter(([, v]) => v.x >= sector.x && v.x < sector.x + span && v.y >= sector.y && v.y < sector.y + span)
             .forEach(([id, v]) => {
                 const $el = $(`<div class="sm-mark" data-id="${id}" data-kind="${kind}">`)
-                    .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, chosen.has(id)) });
+                    .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, id) });
                 if (kind === 'main') $el.append(badge(v));
                 sector.appendElement($el[0], v.x - sector.x, v.y - sector.y);
             });
     };
 
-    const restyle = () => $('.sm-mark').each((_, el) => $(el).css(look(el.dataset.kind, chosen.has(el.dataset.id))));
+    const restyle = () => $('.sm-mark').each((_, el) => $(el).css(look(el.dataset.kind, el.dataset.id)));
 
     const at = (x, y) => Object.keys(data.villages).find(id => data.villages[id].x === x && data.villages[id].y === y);
 
@@ -344,6 +426,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
     const select = (key, value) => {
         view[key] = value;
         if (key === 'ally') view.player = ALL;
+        if (key !== 'tier') view.tier = ALL;
         render();
     };
 
@@ -437,6 +520,26 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         if (off) pick.off.add(unit);
         else pick.off.delete(unit);
         $(e.currentTarget).toggleClass('sm-on', !off);
+    });
+    $panel.on('input', '.sm-goal-input', e => {
+        goal = Math.max(0, parseInt(e.currentTarget.value) || 0);
+        TWK.store.set(GOAL_KEY, goal);
+        $panel.find('.sm-tiers').html(tiers());
+        $panel.find('.sm-goalbtn').toggleClass('sm-goalset', !!goal);
+        restyle();
+    });
+    $panel.on('change', '.sm-goal-input', () => {
+        const filtered = view.tier !== ALL;
+        if (filtered) render();
+    });
+    $panel.on('click', '.sm-tier', e => {
+        const color = $(e.currentTarget).data('tier');
+        select('tier', view.tier === color ? ALL : color);
+    });
+    $panel.on('click', '.sm-goalbtn', () => {
+        goalOpen = !goalOpen;
+        $panel.find('.sm-goalrow').prop('hidden', !goalOpen);
+        $panel.find('.sm-goalbtn').toggleClass('sm-active', goalOpen);
     });
     $panel.on('input', '.sm-amount', e => {
         pick.percent = Math.min(100, Math.max(10, parseInt(e.currentTarget.value) || 100));
