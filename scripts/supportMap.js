@@ -3,7 +3,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
     const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 6, ram: 5, catapult: 8, knight: 10, snob: 100 };
-    const WIDE = 1020;
+    const WIDE = 1100;
     const NARROW = 400;
     const ALL = '';
     const NONE = '0';
@@ -31,6 +31,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .sm-compact .twk-idle p { max-width: 300px; }
             #sm-panel .sm-compact .twk-btn { min-width: 180px; }
             #sm-panel .sm-content > .twk-loading, #sm-panel .sm-content > .twk-idle { flex: 1; }
+            #sm-panel .sm-progress { flex: none; padding: 10px 16px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+            #sm-panel .sm-progress span { flex: none; min-width: 170px; }
+            #sm-panel .sm-progress i { flex: 1; height: 4px; border-radius: 2px; background: var(--surface); overflow: hidden; }
+            #sm-panel .sm-progress b { display: block; width: 0; height: 100%; background: var(--accent); transition: width .3s; }
+            #sm-panel .sm-reading .sm-stats, #sm-panel .sm-reading .sm-main { opacity: .45; pointer-events: none; }
             #sm-panel .sm-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
             #sm-panel .sm-stat { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); }
             #sm-panel .sm-stat:last-child { border-right: 0; }
@@ -88,7 +93,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
                 background: none; border: 1px solid transparent; border-radius: 4px; color: var(--muted); cursor: pointer;
             }
             #sm-panel .sm-del:hover { color: #f08a8a; border-color: var(--line-hi); }
-            #sm-panel .sm-del.sm-armed { width: auto; padding: 0 8px; font-size: 11px; }
+            #sm-panel .sm-del.sm-armed { width: auto; padding: 0 8px; position: relative; z-index: 1; white-space: nowrap; font-size: 11px; }
         `,
         body: '<div class="sm-content"></div>',
     });
@@ -134,9 +139,15 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         $content.toggleClass('sm-compact', !wide);
     };
 
-    const busy = text => {
-        size(!!data);
-        $content.html(TWK.loading(text));
+    const busy = (text, ratio = 0) => {
+        if (!data) {
+            size(false);
+            return $content.html(TWK.loading(text));
+        }
+        const missing = !$content.find('.sm-progress').length;
+        if (missing) $content.addClass('sm-reading').prepend('<div class="sm-progress"><span></span><i><b></b></i></div>');
+        $content.find('.sm-progress span').text(text);
+        $content.find('.sm-progress b').css('width', `${ratio * 100}%`);
     };
 
     const read = async () => {
@@ -150,7 +161,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             result.units = units(first);
             collect(first, result);
             for (let page = 1; page < total && reading; page++) {
-                busy(`Lendo a página ${page + 1} de ${total}...`);
+                busy(`Lendo a página ${page + 1} de ${total}...`, page / total);
                 collect(await TWK.doc(TWK.url(`${PATH}&page=${page}`)), result);
             }
         } catch {
@@ -188,6 +199,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
 
     const render = () => {
         size(!!data);
+        $content.removeClass('sm-reading');
         if (!data) return $content.html(`
             ${TWK.idle(TWK.ICON.target, 'Nenhum apoio lido ainda', 'Leia os apoios que você está enviando para ver quem você apoia, as tropas em cada aldeia e marcar tudo no mapa.')}
             <button class="twk-btn twk-primary sm-start">${TWK.ICON.refresh}Ler apoios</button>
@@ -203,7 +215,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const link = onMap();
-        const cols = `16px 68px minmax(90px, 1.3fr) repeat(${columns.length}, minmax(0, 1fr)) 92px 76px`;
+        const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr)) 96px 28px`;
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
