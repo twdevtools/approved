@@ -14,7 +14,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     ];
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
-    const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 6, ram: 5, catapult: 8, knight: 10, snob: 100 };
+    const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 4, ram: 5, catapult: 8, knight: 10, snob: 100 };
     const WIDE = 1100;
     const NARROW = 400;
     const ALL = '';
