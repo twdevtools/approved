@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', dataType: 'script', cache: true }).then(async () => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.3/twkit.js', dataType: 'script', cache: true }).then(async () => {
     const KEY = `twTroopCounter_${game_data.world}`;
     const ROWS = '#units_table tbody.row_marker';
     const TYPES = [
