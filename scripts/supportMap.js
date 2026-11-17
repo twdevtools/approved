@@ -277,6 +277,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             .sort((a, b) => b.villages.length - a.villages.length);
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
+        const scroll = $content.find('.sm-players').scrollTop();
         const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr)) 96px 28px`;
         $content.html(`
             <div class="sm-stats">
@@ -346,6 +347,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                 </section>
             </div>
         `);
+        $content.find('.sm-players').scrollTop(scroll);
     };
 
     const tier = id => {
