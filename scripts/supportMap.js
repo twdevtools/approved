@@ -1,8 +1,10 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', dataType: 'script', cache: true }).then(() => {
     const KEY = `twSupportMap_${game_data.world}`;
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
     const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 6, ram: 5, catapult: 8, knight: 10, snob: 100 };
+    const WIDE = 1020;
+    const NARROW = 400;
     const ALL = '';
     const NONE = '0';
 
@@ -14,15 +16,20 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         title: 'Apoios Enviados',
         sub: 'Aldeias que você está apoiando',
         icon: TWK.ICON.target,
-        width: 1020,
+        width: WIDE,
         fold: true,
         actions: `<button class="twk-icon sm-refresh" title="Atualizar">${TWK.ICON.refresh}</button>`,
         onClose: () => {
             reading = false;
+            picking = false;
         },
         css: `
             #sm-panel .twk-body { padding: 0; gap: 0; max-height: none; overflow: visible; }
             #sm-panel .sm-content { height: min(620px, 72vh); display: flex; flex-direction: column; }
+            #sm-panel .sm-content.sm-compact { height: auto; padding: 28px 24px 24px; align-items: center; gap: 18px; }
+            #sm-panel .sm-compact .twk-idle { padding: 0; }
+            #sm-panel .sm-compact .twk-idle p { max-width: 300px; }
+            #sm-panel .sm-compact .twk-btn { min-width: 180px; }
             #sm-panel .sm-content > .twk-loading, #sm-panel .sm-content > .twk-idle { flex: 1; }
             #sm-panel .sm-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
             #sm-panel .sm-stat { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); }
@@ -59,6 +66,30 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
             #sm-panel .sm-zero { color: var(--line-hi); }
             #sm-panel .sm-owner { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
             #sm-panel .sm-pop { color: var(--text); font-weight: 600; }
+            #sm-panel .twk-btn { white-space: nowrap; }
+            #sm-panel .sm-tools { display: flex; gap: 6px; }
+            #sm-panel .sm-tool { width: 32px; padding: 0; }
+            #sm-panel .sm-tool.sm-active { border-color: #ffd60a; color: #ffd60a; }
+            #sm-panel .sm-pick { display: flex; align-items: center; gap: 6px; }
+            #sm-panel .sm-pick .sm-remove { margin-left: auto; }
+            #sm-panel .sm-pick .twk-caption { margin-right: 4px; }
+            #sm-panel .sm-toggle {
+                width: 32px; height: 30px; padding: 0; display: grid; place-items: center;
+                background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; opacity: .35;
+            }
+            #sm-panel .sm-toggle img { width: 18px; height: 18px; }
+            #sm-panel .sm-toggle.sm-on { opacity: 1; border-color: var(--accent); }
+            #sm-panel .sm-percent { width: 96px; margin-left: 8px; }
+            #sm-panel .sm-row.sm-chosen { background: rgba(255, 214, 10, .07); }
+            #sm-panel .sm-remove { border-color: var(--accent); color: #f08a8a; }
+            #sm-panel .sm-remove:hover { background: var(--accent); color: #fff; }
+            #sm-panel .sm-armed, #sm-panel .sm-armed:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+            #sm-panel .sm-del {
+                width: 24px; height: 24px; padding: 0; display: grid; place-items: center; justify-self: end;
+                background: none; border: 1px solid transparent; border-radius: 4px; color: var(--muted); cursor: pointer;
+            }
+            #sm-panel .sm-del:hover { color: #f08a8a; border-color: var(--line-hi); }
+            #sm-panel .sm-del.sm-armed { width: auto; padding: 0 8px; font-size: 11px; }
         `,
         body: '<div class="sm-content"></div>',
     });
@@ -66,6 +97,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
     const $content = $panel.find('.sm-content');
     const $refresh = $panel.find('.sm-refresh');
     const view = { ally: ALL, player: ALL };
+    const pick = { off: new Set(), percent: 100 };
+    const chosen = new Set();
+    const scales = {};
+    let picking = false;
 
     const pageCount = $doc => {
         const numbers = $doc.find('.paged-nav-item, .paged-nav-item ~ select option').get()
@@ -95,7 +130,15 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         counts.forEach((n, i) => village.troops[i] += n);
     });
 
-    const busy = text => $content.html(TWK.loading(text));
+    const size = wide => {
+        $panel.css('width', wide ? WIDE : NARROW);
+        $content.toggleClass('sm-compact', !wide);
+    };
+
+    const busy = text => {
+        size(!!data);
+        $content.html(TWK.loading(text));
+    };
 
     const read = async () => {
         reading = true;
@@ -134,7 +177,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
 
     const inAlly = v => view.ally === ALL || v.ally === view.ally;
 
-    const visible = () => Object.values(data.villages).filter(v => inAlly(v) && (view.player === ALL || v.player === view.player));
+    const visible = () => Object.entries(data.villages).map(([id, v]) => ({ ...v, id })).filter(v => inAlly(v) && (view.player === ALL || v.player === view.player));
 
     const stat = (label, value) => `<div class="sm-stat"><span>${label}</span><b class="twk-mono">${value}</b></div>`;
 
@@ -145,7 +188,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
     </button>`;
 
     const render = () => {
-        if (!data) return $content.html(TWK.idle(TWK.ICON.target, 'Nenhum dado salvo', 'Clique em atualizar para ler os apoios que você está enviando.'));
+        size(!!data);
+        if (!data) return $content.html(`
+            ${TWK.idle(TWK.ICON.target, 'Nenhum apoio lido ainda', 'Leia os apoios que você está enviando para ver quem você apoia, as tropas em cada aldeia e marcar tudo no mapa.')}
+            <button class="twk-btn twk-primary sm-start">${TWK.ICON.refresh}Ler apoios</button>
+        `);
         const all = Object.values(data.villages);
         const scoped = all.filter(inAlly);
         const list = visible().sort((a, b) => pop(b.troops) - pop(a.troops));
@@ -157,7 +204,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const link = onMap();
-        const cols = `68px minmax(90px, 1.3fr) repeat(${columns.length}, minmax(0, 1fr)) 92px`;
+        const cols = `16px 68px minmax(90px, 1.3fr) repeat(${columns.length}, minmax(0, 1fr)) 92px 76px`;
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
@@ -182,27 +229,40 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
                 </aside>
                 <section class="sm-area">
                     <div class="sm-bar">
-                        <span class="twk-label">Aldeias <span class="twk-hint">${link ? 'clique para ver no mapa' : 'ordenadas por população'}</span></span>
-                        <button class="twk-btn sm-copy">${TWK.ICON.copy}Copiar coordenadas</button>
+                        <span class="twk-label">Aldeias <span class="twk-hint">${hint()}</span></span>
+                        <div class="sm-tools">
+                            ${link ? `<button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" title="Selecionar no mapa">${TWK.ICON.target}</button>` : ''}
+                            <button class="twk-btn sm-tool sm-copy" title="Copiar coordenadas">${TWK.ICON.copy}</button>
+                        </div>
+                    </div>
+                    <div class="sm-pick">
+                        <span class="twk-caption">Retirar</span>
+                        ${columns.map(u => `<button class="sm-toggle${pick.off.has(u.unit) ? '' : ' sm-on'}" data-unit="${u.unit}" title="${u.unit}"><img src="${u.src}" alt="${u.unit}"></button>`).join('')}
+                        <div class="sm-percent">${TWK.number('sm-amount', { min: 10, max: 100, step: 10, value: pick.percent })}</div>
+                        <span class="twk-caption">%</span>
+                        <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
                     </div>
                     <div class="sm-table" style="--cols: ${cols}">
                         <div class="sm-head">
+                            <input type="checkbox" class="sm-check sm-check-all"${list.length && list.every(v => chosen.has(v.id)) ? ' checked' : ''}>
                             <span>Aldeia</span><span>Jogador</span>
                             ${columns.map(u => `<img src="${u.src}" alt="${u.unit}" title="${u.unit}">`).join('')}
-                            <span class="sm-num">População</span>
+                            <span class="sm-num">População</span><span></span>
                         </div>
                         <div class="sm-body">
-                            ${list.map(v => `<div class="sm-row${link ? ' sm-link' : ''}" data-x="${v.x}" data-y="${v.y}">
+                            ${list.map(v => `<div class="sm-row${link ? ' sm-link' : ''}${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
+                                <input type="checkbox" class="sm-check"${chosen.has(v.id) ? ' checked' : ''}>
                                 <b class="twk-mono">${v.x}|${v.y}</b>
                                 <span class="sm-owner">${TWK.escape(data.players[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.troops[u.i])).join('')}
                                 <span class="sm-num sm-pop">${TWK.format(pop(v.troops))}</span>
+                                <button class="sm-del" title="Remover apoio">${TWK.ICON.close}</button>
                             </div>`).join('')}
                         </div>
                         <div class="sm-foot">
-                            <span>Total</span><span></span>
+                            <span></span><span>Total</span><span></span>
                             ${columns.map(u => cell(u.total)).join('')}
-                            <span class="sm-num sm-pop">${TWK.format(total)}</span>
+                            <span class="sm-num sm-pop">${TWK.format(total)}</span><span></span>
                         </div>
                     </div>
                 </section>
@@ -210,28 +270,45 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         `);
     };
 
-    const style = map => {
-        const mini = map === TWMap.minimap;
-        const dot = Math.max(...map.scale) * 2.4;
-        return mini
-            ? { width: dot, height: dot, marginLeft: (map.scale[0] - dot) / 2, marginTop: (map.scale[1] - dot) / 2, borderRadius: '50%', border: '2px solid #000', background: '#fff', zIndex: 10 }
-            : { width: map.scale[0], height: map.scale[1], border: '3px solid #fff', outline: '1px solid #000', background: 'rgba(255, 255, 255, .35)', zIndex: 5 };
+    const look = (kind, selected) => {
+        const scale = scales[kind];
+        const color = selected ? '#ffd60a' : '#fff';
+        const dot = Math.max(...scale) * 2.4;
+        return kind === 'mini'
+            ? { width: dot, height: dot, marginLeft: (scale[0] - dot) / 2, marginTop: (scale[1] - dot) / 2, borderRadius: '50%', border: '2px solid #000', background: color, zIndex: 10 }
+            : { width: scale[0], height: scale[1], border: `3px solid ${color}`, outline: '1px solid #000', background: selected ? 'rgba(255, 214, 10, .45)' : 'rgba(255, 255, 255, .35)', zIndex: 5 };
     };
 
     const mark = sector => {
         const map = sector._map;
         const span = map.sectorSize;
-        const css = { position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...style(map) };
-        Object.values(data.villages)
-            .filter(v => v.x >= sector.x && v.x < sector.x + span && v.y >= sector.y && v.y < sector.y + span)
-            .forEach(v => sector.appendElement($('<div class="sm-mark">').css(css)[0], v.x - sector.x, v.y - sector.y));
+        const kind = map === TWMap.minimap ? 'mini' : 'main';
+        scales[kind] = map.scale;
+        Object.entries(data.villages)
+            .filter(([, v]) => v.x >= sector.x && v.x < sector.x + span && v.y >= sector.y && v.y < sector.y + span)
+            .forEach(([id, v]) => {
+                const el = $(`<div class="sm-mark" data-id="${id}" data-kind="${kind}">`)
+                    .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, chosen.has(id)) })[0];
+                sector.appendElement(el, v.x - sector.x, v.y - sector.y);
+            });
     };
+
+    const restyle = () => $('.sm-mark').each((_, el) => $(el).css(look(el.dataset.kind, chosen.has(el.dataset.id))));
+
+    const at = (x, y) => Object.keys(data.villages).find(id => data.villages[id].x === x && data.villages[id].y === y);
 
     const paint = () => {
         const ready = onMap() && data;
         if (!ready) return;
         TWMap.mapHandler.smSpawn ??= TWMap.mapHandler.spawnSector;
         TWMap.minimapHandler.smLoad ??= TWMap.minimapHandler.loadSector;
+        TWMap.mapHandler.smClick ??= TWMap.mapHandler.onClick;
+        TWMap.mapHandler.onClick = function (x, y, event) {
+            const id = picking && at(x, y);
+            if (!id) return TWMap.mapHandler.smClick.call(this, x, y, event);
+            toggle(id);
+            return false;
+        };
         TWMap.mapHandler.spawnSector = function (info, sector) {
             TWMap.mapHandler.smSpawn.call(this, info, sector);
             mark(sector);
@@ -249,13 +326,121 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', 
         render();
     };
 
+    const hint = () => {
+        if (picking) return 'clique nas aldeias marcadas no mapa';
+        return onMap() ? 'clique para ver no mapa' : 'ordenadas por população';
+    };
+
+    const removal = () => `${TWK.ICON.clear}${chosen.size ? `Retirar das selecionadas (${chosen.size})` : 'Selecione aldeias'}`;
+
+    const refresh = () => {
+        $panel.find('.sm-remove:not(.sm-armed)').html(removal()).prop('disabled', !chosen.size);
+        $panel.find('.sm-check-all').prop('checked', visible().every(v => chosen.has(v.id)));
+        restyle();
+    };
+
+    const toggle = id => {
+        const on = !chosen.has(id);
+        if (on) chosen.add(id);
+        else chosen.delete(id);
+        $panel.find(`.sm-row[data-id="${id}"]`).toggleClass('sm-chosen', on).find('.sm-check').prop('checked', on);
+        refresh();
+    };
+
+    const arm = ($btn, label, action) => {
+        const armed = $btn.hasClass('sm-armed');
+        if (armed) return action();
+        const html = $btn.html();
+        $btn.addClass('sm-armed').text(label);
+        setTimeout(() => $btn.removeClass('sm-armed').html(html), 4000);
+    };
+
+    const withdraw = async id => {
+        const $form = (await TWK.doc(TWK.url(`info_village&id=${id}`))).find('#withdraw_selected_units_village_info');
+        const body = { village_id: id, h: game_data.csrf };
+        const removed = {};
+        $form.find('input.unit-selection').each((_, el) => {
+            const chosen = !pick.off.has(el.name.replace('checkbox_', ''));
+            if (chosen) body[el.name] = 'on';
+        });
+        $form.find('td[data-away-id][data-unit-count]').each((_, td) => {
+            const count = Math.floor(+td.getAttribute('data-unit-count') * pick.percent / 100);
+            const chosen = count && !pick.off.has(td.id);
+            if (!chosen) return;
+            body[`withdraw_unit[${td.getAttribute('data-away-id')}][units][${td.id}]`] = count;
+            removed[td.id] = (removed[td.id] || 0) + count;
+        });
+        $form.find('input.troop-request-selector').each((_, el) => body[el.name] = 'on');
+        const empty = !$form.length;
+        if (!empty) await $.post($form.attr('action'), body);
+        const village = data.villages[id];
+        village.troops = village.troops.map((n, i) => Math.max(0, n - (removed[data.units[i].unit] || 0)));
+        const cleared = empty || !village.troops.some(Boolean);
+        if (cleared) delete data.villages[id];
+    };
+
+    const remove = async ids => {
+        $panel.find('.sm-remove, .sm-del, .sm-refresh').prop('disabled', true);
+        let done = 0;
+        try {
+            for (const id of ids) {
+                $panel.find('.sm-bar .twk-hint').text(`removendo ${done + 1} de ${ids.length}...`);
+                await withdraw(id);
+                done++;
+            }
+        } catch {
+            UI.ErrorMessage('Não foi possível remover todos os apoios');
+        }
+        TWK.store.set(KEY, data);
+        chosen.clear();
+        render();
+        if (onMap()) TWMap.reload();
+        UI.SuccessMessage(`Apoios removidos de ${TWK.plural(done, 'aldeia', 'aldeias')}`);
+    };
+
     const copy = () => TWK.copy(visible().map(v => `${v.x}|${v.y}`).join('\n'), 'Coordenadas copiadas');
 
-    $panel.on('click', '.sm-refresh', read);
+    $panel.on('click', '.sm-refresh, .sm-start', read);
     $panel.on('change', '.sm-ally', e => select('ally', e.currentTarget.value));
     $panel.on('click', '.sm-player', e => select('player', String($(e.currentTarget).data('player'))));
     $panel.on('click', '.sm-link', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
+    $panel.on('click', '.sm-remove', e => {
+        const ids = [...chosen];
+        arm($(e.currentTarget), `Confirmar: retirar ${pick.percent}% de ${TWK.plural(ids.length, 'aldeia', 'aldeias')}`, () => remove(ids));
+    });
+    $panel.on('click', '.sm-row .sm-check', e => {
+        e.stopPropagation();
+        toggle(String($(e.currentTarget).closest('.sm-row').data('id')));
+    });
+    $panel.on('change', '.sm-check-all', e => {
+        const all = e.currentTarget.checked;
+        visible().forEach(v => {
+            if (all) chosen.add(v.id);
+            else chosen.delete(v.id);
+        });
+        render();
+        restyle();
+    });
+    $panel.on('click', '.sm-mapmode', e => {
+        picking = !picking;
+        $(e.currentTarget).toggleClass('sm-active', picking).attr('title', picking ? 'Parar de selecionar no mapa' : 'Selecionar no mapa');
+        $panel.find('.sm-bar .twk-hint').text(hint());
+    });
+    $panel.on('click', '.sm-toggle', e => {
+        const unit = $(e.currentTarget).data('unit');
+        const off = !pick.off.has(unit);
+        if (off) pick.off.add(unit);
+        else pick.off.delete(unit);
+        $(e.currentTarget).toggleClass('sm-on', !off);
+    });
+    $panel.on('input', '.sm-amount', e => {
+        pick.percent = Math.min(100, Math.max(10, parseInt(e.currentTarget.value) || 100));
+    });
+    $panel.on('click', '.sm-del', e => {
+        e.stopPropagation();
+        arm($(e.currentTarget), 'Confirmar?', () => remove([String($(e.currentTarget).closest('.sm-row').data('id'))]));
+    });
 
     render();
     paint();

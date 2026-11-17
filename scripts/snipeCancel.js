@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'overview';
     if (!page) return TWK.redirect('overview', 'Redirecionando para a visualização da aldeia...');
 

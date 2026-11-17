@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.1';
+    const VERSION = '1.2.2';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -112,12 +112,12 @@
             background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; user-select: none;
         }
         .twk-panel .twk-check:hover { border-color: var(--line-hi); }
-        .twk-panel .twk-check input {
-            appearance: none; width: 16px; height: 16px; flex: none; cursor: pointer;
+        .twk-panel input[type=checkbox] {
+            appearance: none; width: 16px; height: 16px; margin: 0; flex: none; cursor: pointer;
             background: var(--surface) center / 12px no-repeat; border: 1px solid var(--line-hi); border-radius: 4px;
         }
-        .twk-panel .twk-check input:hover { border-color: var(--muted); }
-        .twk-panel .twk-check input:checked { background-color: var(--accent); border-color: var(--accent); background-image: ${CHECK}; }
+        .twk-panel input[type=checkbox]:hover { border-color: var(--muted); }
+        .twk-panel input[type=checkbox]:checked { background-color: var(--accent); border-color: var(--accent); background-image: ${CHECK}; }
         .twk-panel .twk-btn {
             height: 30px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
             background: var(--surface); border: 1px solid var(--line); border-radius: 6px; font-weight: 600; cursor: pointer;
