@@ -50,7 +50,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .sm-player div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             #sm-panel .sm-player div small { color: var(--muted); font-size: 11px; }
             #sm-panel .sm-player > b { flex: none; min-width: 28px; padding: 1px 6px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; text-align: center; }
-            #sm-panel .sm-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
             #sm-panel .sm-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
             #sm-panel .sm-head, #sm-panel .sm-row, #sm-panel .sm-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 12px; padding: 0 16px; }
             #sm-panel .sm-head, #sm-panel .sm-foot { padding-right: 26px; }
@@ -71,7 +70,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
             #sm-panel .sm-tool { width: 32px; padding: 0; }
             #sm-panel .sm-tool.sm-active { border-color: #ffd60a; color: #ffd60a; }
             #sm-panel .sm-pick { display: flex; align-items: center; gap: 6px; }
-            #sm-panel .sm-pick .sm-remove { margin-left: auto; }
+            #sm-panel .sm-pick .sm-tools { margin-left: auto; }
             #sm-panel .sm-pick .twk-caption { margin-right: 4px; }
             #sm-panel .sm-toggle {
                 width: 32px; height: 30px; padding: 0; display: grid; place-items: center;
@@ -228,19 +227,16 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
                     </div>
                 </aside>
                 <section class="sm-area">
-                    <div class="sm-bar">
-                        <span class="twk-label">Aldeias <span class="twk-hint">${hint()}</span></span>
-                        <div class="sm-tools">
-                            ${link ? `<button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" title="Selecionar no mapa">${TWK.ICON.target}</button>` : ''}
-                            <button class="twk-btn sm-tool sm-copy" title="Copiar coordenadas">${TWK.ICON.copy}</button>
-                        </div>
-                    </div>
                     <div class="sm-pick">
                         <span class="twk-caption">Retirar</span>
                         ${columns.map(u => `<button class="sm-toggle${pick.off.has(u.unit) ? '' : ' sm-on'}" data-unit="${u.unit}" title="${u.unit}"><img src="${u.src}" alt="${u.unit}"></button>`).join('')}
                         <div class="sm-percent">${TWK.number('sm-amount', { min: 10, max: 100, step: 10, value: pick.percent })}</div>
                         <span class="twk-caption">%</span>
-                        <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
+                        <div class="sm-tools">
+                            ${link ? `<button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" title="Selecionar no mapa">${TWK.ICON.target}</button>` : ''}
+                            <button class="twk-btn sm-tool sm-copy" title="Copiar coordenadas">${TWK.ICON.copy}</button>
+                            <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
+                        </div>
                     </div>
                     <div class="sm-table" style="--cols: ${cols}">
                         <div class="sm-head">
@@ -326,11 +322,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         render();
     };
 
-    const hint = () => {
-        if (picking) return 'clique nas aldeias marcadas no mapa';
-        return onMap() ? 'clique para ver no mapa' : 'ordenadas por população';
-    };
-
     const removal = () => `${TWK.ICON.clear}${chosen.size ? `Retirar das selecionadas (${chosen.size})` : 'Selecione aldeias'}`;
 
     const refresh = () => {
@@ -384,7 +375,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
         let done = 0;
         try {
             for (const id of ids) {
-                $panel.find('.sm-bar .twk-hint').text(`removendo ${done + 1} de ${ids.length}...`);
+                $panel.find('.sm-remove').text(`Retirando ${done + 1} de ${ids.length}...`);
                 await withdraw(id);
                 done++;
             }
@@ -425,7 +416,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.2/twkit.js', 
     $panel.on('click', '.sm-mapmode', e => {
         picking = !picking;
         $(e.currentTarget).toggleClass('sm-active', picking).attr('title', picking ? 'Parar de selecionar no mapa' : 'Selecionar no mapa');
-        $panel.find('.sm-bar .twk-hint').text(hint());
     });
     $panel.on('click', '.sm-toggle', e => {
         const unit = $(e.currentTarget).data('unit');
