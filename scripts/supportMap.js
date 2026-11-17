@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.3/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.4/twkit.js', dataType: 'script', cache: true }).then(() => {
     const KEY = `twSupportMap_${game_data.world}`;
     const GOAL_KEY = `twSupportMapGoal_${game_data.world}`;
     const BASE = '#ffffff';
@@ -27,6 +27,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.3/twkit.js', 
         icon: TWK.ICON.target,
         width: WIDE,
         fold: true,
+        dock: `${window.image_base}command/support.webp`,
         actions: `<button class="twk-icon sm-refresh" title="Atualizar">${TWK.ICON.refresh}</button>`,
         onClose: () => {
             reading = false;

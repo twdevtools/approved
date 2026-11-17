@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.3';
+    const VERSION = '1.2.4';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -250,6 +250,8 @@
     const spot = $panel => `${$panel.attr('id')}${$panel.hasClass('twk-folded') ? ':folded' : ''}`;
 
     const remember = $panel => {
+        const hidden = !$panel.is(':visible');
+        if (hidden) return;
         const positions = store.get(POS_KEY, {});
         positions[spot($panel)] = $panel.position();
         store.set(POS_KEY, positions);
@@ -270,12 +272,28 @@
         else $panel.css({ left: '', top: '' });
     };
 
+    const dock = ($panel, folded) => {
+        const id = $panel.attr('id');
+        const image = $panel.data('twkDock');
+        const $log = $('.questlog').first();
+        const docked = folded && !!image && !!$log.length;
+        $(`#${id}-dock`).remove();
+        $panel.toggle(!docked);
+        if (!docked) return;
+        $(`<div class="quest" id="${id}-dock">`)
+            .attr('title', $panel.find('.twk-title').text())
+            .css({ backgroundImage: `url("${image}")`, backgroundSize: '70%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' })
+            .on('click', () => collapse($panel, false))
+            .appendTo($log);
+    };
+
     const toggle = ($panel, folded) => {
         const state = store.get(FOLD_KEY, {});
         state[$panel.attr('id')] = folded;
         store.set(FOLD_KEY, state);
         $panel.toggleClass('twk-folded', folded);
         $panel.find('.twk-fold').html(folded ? ICON.down : ICON.up).attr('title', folded ? 'Expandir' : 'Minimizar');
+        dock($panel, folded);
     };
 
     const collapse = ($panel, folded) => {
@@ -284,7 +302,7 @@
         place($panel);
     };
 
-    const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', fold = false, onClose }) => {
+    const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', fold = false, dock: image = '', onClose }) => {
         $(`#${id}`).each((_, el) => $(el).data('twkClose')());
         const $panel = $(`<div id="${id}" class="twk-panel" style="width: ${width}px">
             <style>${css}</style>
@@ -302,9 +320,10 @@
         </div>`).appendTo('body');
         const close = () => {
             onClose?.();
+            $(`#${id}-dock`).remove();
             $panel.remove();
         };
-        $panel.data('twkClose', close).on('click', '.twk-close', close);
+        $panel.data({ twkClose: close, twkDock: image }).on('click', '.twk-close', close);
         $panel.on('click', '.twk-fold', () => collapse($panel, !$panel.hasClass('twk-folded')));
         if (fold) toggle($panel, !!store.get(FOLD_KEY, {})[id]);
         if (window.mobiledevice) return $panel.addClass('twk-center');
