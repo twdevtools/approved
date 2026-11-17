@@ -135,7 +135,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     let goalOpen = false;
     const chosen = new Set();
     const scales = {};
-    let picking = false;
+    let picking = true;
 
     const pageCount = $doc => {
         const numbers = $doc.find('.paged-nav-item, .paged-nav-item ~ select option').get()
@@ -308,7 +308,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                         <div class="sm-percent">${TWK.number('sm-amount', { min: 10, max: 100, step: 10, value: pick.percent })}</div>
                         <span class="twk-caption">%</span>
                         <div class="sm-tools">
-                            <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
                             <button class="twk-btn sm-tool sm-goalbtn${goal ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" data-tip="Meta de população">${TWK.ICON.chart}</button>
                             <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
@@ -508,10 +507,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         });
         render();
         restyle();
-    });
-    $panel.on('click', '.sm-mapmode', e => {
-        picking = !picking;
-        $(e.currentTarget).toggleClass('sm-active', picking).attr('data-tip', picking ? 'Parar de selecionar no mapa' : 'Selecionar no mapa');
     });
     $panel.on('click', '.sm-toggle', e => {
         const unit = $(e.currentTarget).data('unit');
