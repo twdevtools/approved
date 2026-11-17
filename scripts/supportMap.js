@@ -1,4 +1,7 @@
 $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', dataType: 'script', cache: true }).then(() => {
+    const page = game_data.screen === 'map';
+    if (!page) return TWK.redirect('map', 'Redirecionando para o mapa...');
+
     const KEY = `twSupportMap_${game_data.world}`;
     const GOAL_KEY = `twSupportMapGoal_${game_data.world}`;
     const BASE = '#ffffff';
@@ -91,10 +94,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             #sm-panel .sm-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
             #sm-panel .sm-head img { width: 18px; height: 18px; justify-self: end; }
             #sm-panel .sm-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
-            #sm-panel .sm-row { height: 40px; border-bottom: 1px solid var(--line); }
+            #sm-panel .sm-row { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; }
             #sm-panel .sm-row:last-child { border-bottom: 0; }
-            #sm-panel .sm-row.sm-link { cursor: pointer; }
-            #sm-panel .sm-row.sm-link:hover { background: var(--hover); }
+            #sm-panel .sm-row:hover { background: var(--hover); }
             #sm-panel .sm-foot { height: 42px; flex: none; background: var(--surface); border-top: 1px solid var(--line); font-weight: 600; }
             #sm-panel .sm-num { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-family: ui-monospace, Consolas, monospace; }
             #sm-panel .sm-zero { color: var(--line-hi); }
@@ -208,8 +210,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         render();
     };
 
-    const onMap = () => game_data.screen === 'map' && !!window.TWMap;
-
     const pop = troops => troops.reduce((total, n, i) => total + n * (POP[data.units[i].unit] || 0), 0);
 
     const tag = id => data.allies[id] ? `[${TWK.escape(data.allies[id])}]` : 'Sem tribo';
@@ -252,7 +252,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         }).join('');
     };
 
-
     const stat = (label, value) => `<div class="sm-stat"><span>${label}</span><b class="twk-mono">${value}</b></div>`;
 
     const cell = n => `<span class="sm-num${n ? '' : ' sm-zero'}">${n ? TWK.format(n) : '–'}</span>`;
@@ -278,7 +277,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             .sort((a, b) => b.villages.length - a.villages.length);
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
-        const link = onMap();
         const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr)) 96px 28px`;
         $content.html(`
             <div class="sm-stats">
@@ -309,7 +307,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                         <div class="sm-percent">${TWK.number('sm-amount', { min: 10, max: 100, step: 10, value: pick.percent })}</div>
                         <span class="twk-caption">%</span>
                         <div class="sm-tools">
-                            ${link ? `<button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>` : ''}
+                            <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
                             <button class="twk-btn sm-tool sm-goalbtn${goal ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" data-tip="Meta de população">${TWK.ICON.chart}</button>
                             <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
@@ -330,7 +328,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                             <span class="sm-num">População</span><span></span>
                         </div>
                         <div class="sm-body">
-                            ${list.map(v => `<div class="sm-row${link ? ' sm-link' : ''}${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
+                            ${list.map(v => `<div class="sm-row${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
                                 <input type="checkbox" class="sm-check"${chosen.has(v.id) ? ' checked' : ''}>
                                 <b class="twk-mono">${v.x}|${v.y}</b>
                                 <span class="sm-owner">${TWK.escape(data.players[v.player] || '')}</span>
@@ -367,7 +365,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             : { width: scale[0], height: scale[1], border: `3px solid ${color}`, outline: '1px solid #000', background: `${color}73`, zIndex: 5 };
     };
 
-
     const short = n => {
         if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')}M`;
         if (n >= 1e3) return `${Math.round(n / 1e3)}k`;
@@ -402,8 +399,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     const at = (x, y) => Object.keys(data.villages).find(id => data.villages[id].x === x && data.villages[id].y === y);
 
     const paint = () => {
-        const ready = onMap() && data;
-        if (!ready) return;
+        if (!data) return;
         TWMap.mapHandler.smSpawn ??= TWMap.mapHandler.spawnSector;
         TWMap.minimapHandler.smLoad ??= TWMap.minimapHandler.loadSector;
         TWMap.mapHandler.smClick ??= TWMap.mapHandler.onClick;
@@ -452,13 +448,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         const body = { village_id: id, h: game_data.csrf };
         const removed = {};
         $form.find('input.unit-selection').each((_, el) => {
-            const chosen = !pick.off.has(el.name.replace('checkbox_', ''));
-            if (chosen) body[el.name] = 'on';
+            const wanted = !pick.off.has(el.name.replace('checkbox_', ''));
+            if (wanted) body[el.name] = 'on';
         });
         $form.find('td[data-away-id][data-unit-count]').each((_, td) => {
             const count = Math.floor(+td.getAttribute('data-unit-count') * pick.percent / 100);
-            const chosen = count && !pick.off.has(td.id);
-            if (!chosen) return;
+            const wanted = count && !pick.off.has(td.id);
+            if (!wanted) return;
             body[`withdraw_unit[${td.getAttribute('data-away-id')}][units][${td.id}]`] = count;
             removed[td.id] = (removed[td.id] || 0) + count;
         });
@@ -486,8 +482,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         }
         chosen.clear();
         render();
-        if (onMap()) TWMap.reload();
-        UI.SuccessMessage(`Apoios removidos de ${TWK.plural(done, 'aldeia', 'aldeias')}`);
+        TWMap.reload();
+        if (done) UI.SuccessMessage(`Apoios removidos de ${TWK.plural(done, 'aldeia', 'aldeias')}`);
     };
 
     const copy = () => TWK.copy(visible().map(v => `${v.x}|${v.y}`).join('\n'), 'Coordenadas copiadas');
@@ -495,7 +491,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     $panel.on('click', '.sm-refresh, .sm-start', read);
     $panel.on('change', '.sm-ally', e => select('ally', e.currentTarget.value));
     $panel.on('click', '.sm-player', e => select('player', String($(e.currentTarget).data('player'))));
-    $panel.on('click', '.sm-link', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
+    $panel.on('click', '.sm-row', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
     $panel.on('click', '.sm-remove', () => remove([...chosen]));
     $panel.on('click', '.sm-row .sm-check', e => {
