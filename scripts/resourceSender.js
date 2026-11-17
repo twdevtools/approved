@@ -176,7 +176,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                 .map(v => ({ ...v, send: split(v.traders * CARRY, Object.fromEntries(RESOURCES.map(r => [r, Math.floor(v[r] * (100 - opt.keep) / 100)]))) }))
                 .filter(v => RESOURCES.some(r => v.send[r]));
             skipped = list.length - plan.length;
-            show();
+            const empty = !list.length;
+            const idle = !plan.length;
+            if (empty) status('Nenhuma aldeia neste grupo');
+            else if (idle) status(`${TWK.plural(skipped, 'aldeia', 'aldeias')} sem comerciantes ou recursos para enviar`);
+            else show();
             $send.prop('disabled', !plan.length);
         } catch {
             status('Não foi possível calcular o envio');
