@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.0/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.1/twkit.js', dataType: 'script', cache: true }).then(() => {
     const KEY = `twSupportMap_${game_data.world}`;
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
@@ -15,6 +15,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.0/twkit.js', 
         sub: 'Aldeias que você está apoiando',
         icon: TWK.ICON.target,
         width: 940,
+        fold: true,
         actions: `<button class="twk-icon sm-refresh" title="Atualizar">${TWK.ICON.refresh}</button>`,
         onClose: () => {
             reading = false;

@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.0';
+    const VERSION = '1.2.1';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -259,7 +259,7 @@
         if (fits) $panel.css(pos);
     };
 
-    const fold = ($panel, folded) => {
+    const collapse = ($panel, folded) => {
         const state = store.get(FOLD_KEY, {});
         state[$panel.attr('id')] = folded;
         store.set(FOLD_KEY, state);
@@ -267,7 +267,7 @@
         $panel.find('.twk-fold').html(folded ? ICON.down : ICON.up).attr('title', folded ? 'Expandir' : 'Minimizar');
     };
 
-    const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', onClose }) => {
+    const panel = ({ id, title, sub = '', icon = '', width = 320, actions = '', body = '', css = '', fold = false, onClose }) => {
         $(`#${id}`).each((_, el) => $(el).data('twkClose')());
         const $panel = $(`<div id="${id}" class="twk-panel" style="width: ${width}px">
             <style>${css}</style>
@@ -278,7 +278,7 @@
                     <div class="twk-sub">${sub}</div>
                 </div>
                 ${actions}
-                <button class="twk-icon twk-fold"></button>
+                ${fold ? '<button class="twk-icon twk-fold"></button>' : ''}
                 <button class="twk-icon twk-close" title="Fechar">${ICON.close}</button>
             </div>
             <div class="twk-body">${body}</div>
@@ -288,8 +288,8 @@
             $panel.remove();
         };
         $panel.data('twkClose', close).on('click', '.twk-close', close);
-        $panel.on('click', '.twk-fold', () => fold($panel, !$panel.hasClass('twk-folded')));
-        fold($panel, !!store.get(FOLD_KEY, {})[id]);
+        $panel.on('click', '.twk-fold', () => collapse($panel, !$panel.hasClass('twk-folded')));
+        if (fold) collapse($panel, !!store.get(FOLD_KEY, {})[id]);
         if (window.mobiledevice) return $panel.addClass('twk-center');
         restore($panel);
         if ($.fn.draggable) $panel.draggable({ handle: '.twk-head', cancel: '.twk-icon', containment: 'window', stop: () => remember($panel) });
