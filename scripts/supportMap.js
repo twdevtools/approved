@@ -220,6 +220,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     const visible = () => scope().filter(v => !goal || view.tier === ALL || tier(v.id) === view.tier);
 
+    const shown = () => new Set([...visible().map(v => v.id), ...chosen]);
+
     const bounds = i => ({
         low: TWK.format(Math.ceil(goal * TIERS[i].min)),
         high: i ? TWK.format(Math.ceil(goal * TIERS[i - 1].min) - 1) : '',
@@ -386,8 +388,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         const span = map.sectorSize;
         const kind = map === TWMap.minimap ? 'mini' : 'main';
         scales[kind] = map.scale;
+        const ids = shown();
         Object.entries(data.villages)
-            .filter(([, v]) => v.x >= sector.x && v.x < sector.x + span && v.y >= sector.y && v.y < sector.y + span)
+            .filter(([id, v]) => ids.has(id) && v.x >= sector.x && v.x < sector.x + span && v.y >= sector.y && v.y < sector.y + span)
             .forEach(([id, v]) => {
                 const $el = $(`<div class="sm-mark" data-id="${id}" data-kind="${kind}">`)
                     .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, id) });
@@ -398,7 +401,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     const restyle = () => $('.sm-mark').each((_, el) => $(el).css(look(el.dataset.kind, el.dataset.id)));
 
-    const at = (x, y) => Object.keys(data.villages).find(id => data.villages[id].x === x && data.villages[id].y === y);
+    const at = (x, y) => {
+        const ids = shown();
+        return Object.keys(data.villages).find(id => ids.has(id) && data.villages[id].x === x && data.villages[id].y === y);
+    };
 
     const paint = () => {
         if (!data) return;
@@ -427,6 +433,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         if (key === 'ally') view.player = ALL;
         if (key !== 'tier') view.tier = ALL;
         render();
+        TWMap.reload();
     };
 
     const removal = () => `${TWK.ICON.clear}${chosen.size ? `Retirar das selecionadas (${chosen.size})` : 'Selecione aldeias'}`;
@@ -442,6 +449,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         if (on) chosen.add(id);
         else chosen.delete(id);
         $panel.find(`.sm-row[data-id="${id}"]`).toggleClass('sm-chosen', on).find('.sm-check').prop('checked', on);
+        const hidden = !on && !visible().some(v => v.id === id);
+        if (hidden) $(`.sm-mark[data-id="${id}"]`).remove();
         refresh();
     };
 
@@ -529,7 +538,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     });
     $panel.on('change', '.sm-goal-input', () => {
         const filtered = view.tier !== ALL;
-        if (filtered) render();
+        if (!filtered) return;
+        render();
+        TWMap.reload();
     });
     $panel.on('click', '.sm-tier', e => {
         const color = $(e.currentTarget).data('tier');
