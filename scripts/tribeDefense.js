@@ -128,10 +128,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             #td-panel .td-head, #td-panel .td-foot { padding-right: 26px; }
             #td-panel .td-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
             #td-panel .td-head img { width: 18px; height: 18px; }
-            #td-panel .td-sort { display: flex; align-items: center; gap: 2px; min-width: 0; cursor: pointer; user-select: none; }
+            #td-panel .td-sort { display: flex; align-items: center; gap: 5px; min-width: 0; white-space: nowrap; cursor: pointer; user-select: none; }
             #td-panel .td-sort.td-end { justify-content: flex-end; }
             #td-panel .td-sort:hover, #td-panel .td-sorted { color: var(--text); }
-            #td-panel .td-sort svg { width: 11px; height: 11px; flex: none; }
+            #td-panel .td-sort svg { width: 11px; height: 11px; flex: none; opacity: .6; }
+            #td-panel .td-sorted svg { opacity: 1; color: var(--accent); }
             #td-panel .td-enemy { min-width: 0; display: flex; justify-content: space-between; gap: 6px; }
             #td-panel .td-enemy .td-tag { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             #td-panel .td-stale b { color: #ff9f0a; }
@@ -421,7 +422,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     const header = (key, content, extra = '') => {
         const active = view.sort?.key === key;
-        const arrow = active ? (view.sort.dir > 0 ? TWK.ICON.up : TWK.ICON.down) : '';
+        const arrow = active && view.sort.dir > 0 ? TWK.ICON.up : TWK.ICON.down;
         return `<span class="td-sort${active ? ' td-sorted' : ''}${extra}" data-sort="${key}">${content}${arrow}</span>`;
     };
 
@@ -458,7 +459,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         const coming = list.reduce((sum, v) => sum + pop(v.coming), 0);
         const missing = list.reduce((sum, v) => sum + short(v), 0);
         const scroll = $content.find('.td-members').scrollTop();
-        const cols = `68px minmax(70px, 1fr) repeat(${columns.length}, 58px) 76px 104px 32px 32px 84px 80px`;
+        const cols = `68px minmax(70px, 1fr) repeat(${columns.length}, 58px) 88px 104px 36px 36px 84px 80px`;
         const icon = (src, tip) => `<img src="${window.image_base}${src}" alt="" data-tip="${tip}">`;
         $content.html(`
             <div class="td-stats">
@@ -777,9 +778,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     $panel.on('change', '.td-foe', e => select('foe', e.currentTarget.value));
     $panel.on('click', '.td-sort', e => {
         const key = $(e.currentTarget).data('sort');
-        const same = view.sort?.key === key;
         const first = ASCENDING.includes(key) ? 1 : -1;
-        view.sort = { key, dir: same ? -view.sort.dir : first };
+        const same = view.sort?.key === key;
+        const reset = same && view.sort.dir !== first;
+        view.sort = reset ? null : { key, dir: same ? -first : first };
         render();
     });
     $panel.on('change', '.td-zone-input', e => limit(parseArea(e.currentTarget.value)));
