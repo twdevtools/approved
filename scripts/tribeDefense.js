@@ -121,11 +121,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-member > b { flex: none; min-width: 28px; padding: 1px 6px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; text-align: center; }
             #td-panel .td-member > b.td-attacked { background: rgba(255, 69, 58, .18); color: #ff453a; }
             #td-panel .td-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-            #td-panel .td-front { display: flex; align-items: center; gap: 8px; }
-            #td-panel .td-front .twk-number { width: 80px; }
+            #td-panel .td-front { position: relative; display: flex; align-items: center; gap: 8px; }
+            #td-panel .td-front .twk-number { width: 110px; }
+            #td-panel .td-front .twk-number input { padding-right: 72px; }
+            #td-panel .td-front .twk-caption { position: absolute; right: 28px; color: var(--muted); pointer-events: none; }
             #td-panel .td-foe { width: 150px; }
             #td-panel .td-zone { display: flex; align-items: center; gap: 4px; }
-            #td-panel .td-zone-input { width: 130px; }
+            #td-panel .td-zone-draw.td-active { border-color: #0a84ff; color: #0a84ff; }
             #td-panel .td-hint { flex: none; padding: 8px 12px; border: 1px dashed var(--line-hi); border-radius: 8px; color: var(--muted); font-size: 11px; }
             #td-panel .td-tag { color: var(--muted); font-family: system-ui, sans-serif; }
             #td-panel .td-bar .td-tools { margin-left: auto; display: flex; gap: 6px; }
@@ -496,7 +498,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     };
 
     const goals = () => `${guards().map(u => `<label class="td-goal" data-unit="${u.unit}" data-tip="${u.unit}"><img src="${u.src}" alt="${u.unit}">${TWK.number('td-goal-input', { min: 0, step: 1000, value: settings.goal[u.unit] || 0 })}</label>`).join('')}
-        <label class="td-goal" data-tip="Muralha mínima. Abaixo disso a aldeia aparece no mapa mesmo com tropa"><img src="${window.image_base}buildings/wall.webp" alt="">${TWK.number('td-wall-input', { min: 0, max: 20, step: 1, value: settings.wall })}</label>
+        <label class="td-goal" data-tip="Muralha mínima"><img src="${window.image_base}buildings/wall.webp" alt="">${TWK.number('td-wall-input', { min: 0, max: 20, step: 1, value: settings.wall })}</label>
         <small>Meta: <b class="td-target twk-mono">${TWK.format(target())}</b> de população</small>`;
 
     const render = () => {
@@ -535,18 +537,17 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                 </aside>
                 <section class="td-area">
                     <div class="td-bar">
-                        <label class="td-front" data-tip="Mostra suas aldeias a até ${TWK.plural(settings.reach, 'campo', 'campos')} de um bloco inimigo. Bloco é uma aldeia inimiga com pelo menos ${NEIGHBORS} outras inimigas a até ${CLOSE} campos dela, então inimigas isoladas não contam. Inimigos são as ${TWK.plural(Object.keys(data.tribes).length, 'tribo marcada', 'tribos marcadas')} na diplomacia">
+                        <label class="td-front">
                             <span class="twk-label">Front até</span>
                             ${TWK.number('td-front-input', { min: 1, max: LIMIT, step: 1, value: settings.reach })}
-                            <span class="twk-caption">campos</span>
+                            <span class="twk-caption">${settings.reach === 1 ? 'campo' : 'campos'}</span>
                         </label>
-                        <select class="td-foe" data-tip="Tribo inimiga mais próxima">
+                        <select class="td-foe">
                             <option value="${ALL}">Todos os inimigos</option>
                             ${foes.map(id => `<option value="${id}"${id === view.foe ? ' selected' : ''}>${tag(id)}</option>`).join('')}
                         </select>
                         <div class="td-zone">
-                            <input type="text" class="td-zone-input" placeholder="Área: todo o mapa" value="${area ? area.map(([x, y]) => `${x}|${y}`).join(' ') : ''}" data-tip="Só aldeias dentro da área. Desenhe no mapa ou digite os pontos. Com 2 pontos vira um retângulo">
-                            <button class="twk-btn td-tool td-zone-draw${drawing ? ' td-active' : ''}" data-tip="Desenhar a área ponto a ponto no mapa ou no minimapa">${TWK.ICON.pen}</button>
+                            <button class="twk-btn td-zone-draw${drawing ? ' td-active' : ''}"${area ? ' data-tip="Desenhar de novo"' : ''}>${TWK.ICON.pen}${area ? 'Área desenhada' : 'Desenhar área'}</button>
                             ${area ? `<button class="twk-btn td-tool td-zone-clear" data-tip="Limpar a área">${TWK.ICON.close}</button>` : ''}
                         </div>
                         <div class="td-tools">
@@ -561,16 +562,16 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                     ${goal ? '' : '<div class="td-hint">Defina a meta em 📊 para ver as aldeias que precisam de defesa. Sem meta, o mapa mostra só ataques chegando e muralha baixa.</div>'}
                     <div class="td-table" style="--cols: ${cols}">
                         <div class="td-head">
-                            <input type="checkbox" class="td-pick-all"${every ? ' checked' : ''}${list.length ? '' : ' disabled'} data-tip="Selecionar todas. Shift+clique seleciona um intervalo">
+                            <input type="checkbox" class="td-pick-all"${every ? ' checked' : ''}${list.length ? '' : ' disabled'} data-tip="Selecionar todas">
                             <span>Aldeia</span>
                             ${header('member', 'Membro')}
                             ${columns.map(u => header(`unit:${u.i}`, `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`, ' td-end')).join('')}
                             ${header('coming', 'A caminho', ' td-end')}
-                            ${header('gap', '<span data-tip="Tribo inimiga mais próxima e campos até a barreira">Inimigo</span>', ' td-end')}
+                            ${header('gap', '<span data-tip="Inimigo mais próximo e distância">Inimigo</span>', ' td-end')}
                             ${header('attacks', icon('unit/att.webp', 'Ataques chegando'), ' td-end')}
                             ${header('wall', icon('buildings/wall.webp', 'Muralha'), ' td-end')}
                             ${header('pop', '<span data-tip="Tropas que já estão na aldeia">População</span>', ' td-end')}
-                            ${header('missing', '<span data-tip="População que falta para a meta, contando o que está a caminho">Falta</span>', ' td-end')}
+                            ${header('missing', '<span data-tip="Falta para a meta, contando o que está a caminho">Falta</span>', ' td-end')}
                         </div>
                         <div class="td-body">
                             ${list.map(v => `<div class="td-row${chosen.has(v.id) ? ' td-chosen' : ''}" data-x="${v.x}" data-y="${v.y}">
@@ -721,14 +722,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         update();
     };
 
-    const rectangle = ([x1, y1], [x2, y2]) => [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
-
-    const parseArea = text => {
-        const points = [...text.matchAll(/(\d{1,3})\|(\d{1,3})/g)].map(m => [+m[1], +m[2]]);
-        if (points.length === 2) return rectangle(...points);
-        return points.length > 2 ? points : null;
-    };
-
     const maps = () => [TWMap.map, TWMap.minimap].filter(Boolean);
 
     const redraw = () => {
@@ -831,7 +824,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         maps().forEach(map => $(map.el.root).css('cursor', 'crosshair'));
         $panel.find('.td-zone-draw').addClass('td-active');
         TWMap.reload();
-        UI.InfoMessage('Segure o botão do mouse e contorne a área no minimapa ou no mapa');
     };
 
     const within = (points, x, y) => points.reduce((hit, [x1, y1], i) => {
@@ -872,7 +864,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         view.sort = reset ? null : { key, dir: same ? -first : first };
         render();
     });
-    $panel.on('change', '.td-zone-input', e => limit(parseArea(e.currentTarget.value)));
     $panel.on('click', '.td-zone-draw', draw);
     $panel.on('click', '.td-zone-clear', () => limit(null));
     $panel.on('change', '.td-wall-input', e => {
