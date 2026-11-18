@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'map';
     if (!page) return TWK.redirect('map', 'Redirecionando para o mapa...');
 
@@ -6,6 +6,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     const SETTINGS_KEY = `twTribeDefenseSettings_${game_data.world}`;
     const BASE = '#ffffff';
     const ALERT = '#ff453a';
+    const CHOSEN = '#0a84ff';
     const TIERS = [
         { min: 1, color: '#30d158' },
         { min: .5, color: '#ffd60a' },
@@ -24,12 +25,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     const NEIGHBORS = 5;
     const CELL = 10;
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
-    const WIDE = 1200;
+    const WIDE = 1226;
     const NARROW = 400;
     const ALL = '';
     const SHIELD = TWK.svg('<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6Z"/>');
 
-    const VERSION = 3;
+    const VERSION = 4;
 
     const stored = TWK.store.get(KEY);
     let data = stored?.version === VERSION ? stored : null;
@@ -44,6 +45,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     let goalOpen = false;
     let marks = new Map();
     let drawing = null;
+    let chosen = new Set();
+    let pivot = null;
 
     const $panel = TWK.panel({
         id: 'td-panel',
@@ -114,7 +117,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             #td-panel .td-member div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             #td-panel .td-member div small { color: var(--muted); font-size: 11px; }
             #td-panel .td-member > b { flex: none; min-width: 28px; padding: 1px 6px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; text-align: center; }
-            #td-panel .td-bar { display: flex; align-items: center; gap: 8px; }
+            #td-panel .td-member > b.td-attacked { background: rgba(255, 69, 58, .18); color: #ff453a; }
+            #td-panel .td-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
             #td-panel .td-front { display: flex; align-items: center; gap: 8px; }
             #td-panel .td-front .twk-number { width: 80px; }
             #td-panel .td-foe { width: 150px; }
@@ -123,9 +127,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             #td-panel .td-hint { flex: none; padding: 8px 12px; border: 1px dashed var(--line-hi); border-radius: 8px; color: var(--muted); font-size: 11px; }
             #td-panel .td-tag { color: var(--muted); font-family: system-ui, sans-serif; }
             #td-panel .td-bar .td-tools { margin-left: auto; display: flex; gap: 6px; }
-            #td-panel .td-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+            #td-panel .td-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; overflow-y: hidden; }
             #td-panel .td-head, #td-panel .td-row, #td-panel .td-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 10px; padding: 0 16px; }
             #td-panel .td-head, #td-panel .td-foot { padding-right: 26px; }
+            #td-panel .td-head, #td-panel .td-body, #td-panel .td-foot { min-width: min-content; }
             #td-panel .td-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
             #td-panel .td-head img { width: 18px; height: 18px; }
             #td-panel .td-sort { display: flex; align-items: center; gap: 5px; min-width: 0; white-space: nowrap; cursor: pointer; user-select: none; }
@@ -140,6 +145,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             #td-panel .td-row { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; }
             #td-panel .td-row:last-child { border-bottom: 0; }
             #td-panel .td-row:hover { background: var(--hover); }
+            #td-panel .td-row.td-chosen { background: rgba(10, 132, 255, .1); }
+            #td-panel .td-pick, #td-panel .td-pick-all { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); cursor: pointer; }
             #td-panel .td-foot { height: 42px; flex: none; background: var(--surface); border-top: 1px solid var(--line); font-weight: 600; }
             #td-panel .td-num { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-family: ui-monospace, Consolas, monospace; }
             #td-panel .td-zero { color: var(--line-hi); }
@@ -214,29 +221,36 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
     };
 
 
-    const defense = ($doc, player, result) => $doc.find('#ally_content table.vis td[rowspan] a[href*="info_village"]').each((_, anchor) => {
-        const coord = $.trim(anchor.textContent).match(RX_COORD);
+    const column = ($doc, icon) => $doc.find(`#ally_content img[src*="/${icon}."]`).closest('th').index();
+
+    const defense = ($doc, player, result) => {
+        const attacks = column($doc, 'att');
+        $doc.find('#ally_content table.vis td[rowspan] a[href*="info_village"]').each((_, link) => village($(link), player, attacks, result));
+    };
+
+    const village = ($link, player, attacks, result) => {
+        const coord = $.trim($link.text()).match(RX_COORD);
         if (!coord) return;
-        const $row = $(anchor).closest('tr');
-        result.villages[idOf(anchor)] = {
+        const $row = $link.closest('tr');
+        result.villages[idOf($link[0])] = {
             x: +coord[1],
             y: +coord[2],
             player,
             home: numbers($row.children('td').not('[rowspan]').slice(1)),
             coming: numbers($row.next('tr').children('td').slice(1)),
-            attacks: +$.trim($row.children('td[rowspan]').last().text()) || 0,
+            attacks: attacks < 0 ? null : +$.trim($row.children().eq(attacks).text()) || 0,
             wall: null,
             gap: null,
             foe: null,
         };
-    });
+    };
 
     const walls = ($doc, result) => {
-        const column = $doc.find('#ally_content img[src*="/wall."]').closest('th').index();
-        if (column < 0) return;
+        const wall = column($doc, 'wall');
+        if (wall < 0) return;
         $doc.find('#ally_content table.vis a[href*="info_village"]').each((_, anchor) => {
             const village = result.villages[idOf(anchor)];
-            if (village) village.wall = +$.trim($(anchor).closest('tr').children().eq(column).text()) || 0;
+            if (village) village.wall = +$.trim($(anchor).closest('tr').children().eq(wall).text()) || 0;
         });
     };
 
@@ -292,6 +306,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         if (!allowed) UI.ErrorMessage('Só líderes com permissão podem ver a defesa da tribo');
         if (finished) {
             data = result;
+            chosen = new Set();
             TWK.store.set(KEY, data);
             paint();
         }
@@ -326,7 +341,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     const needy = v => !!target() || v.attacks > 0 || weak(v);
 
-    const paintColor = v => target() ? tier(v.id) : ALERT;
+    const paintColor = v => {
+        if (chosen.has(v.id)) return CHOSEN;
+        return target() ? tier(v.id) : ALERT;
+    };
 
     const tag = id => data.tribes[id] ? `[${TWK.escape(data.tribes[id])}]` : '';
 
@@ -428,9 +446,50 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     const cell = (n, extra = '') => `<span class="td-num${n ? extra : ' td-zero'}">${n ? TWK.format(n) : '–'}</span>`;
 
-    const member = (id, name, sub, count) => `<button class="td-member${id === view.member ? ' td-active' : ''}" data-member="${id}">
-        <div><span>${name}</span><small>${sub}</small></div><b>${count}</b>
-    </button>`;
+    const incoming = villages => villages.reduce((sum, v) => sum + v.attacks, 0);
+
+    const picked = list => {
+        const selection = list.filter(v => chosen.has(v.id));
+        return selection.length ? selection : list;
+    };
+
+    const sum = (list, value) => list.reduce((total, v) => total + value(v), 0);
+
+    const stats = (list, counted) => {
+        const selecting = counted !== list;
+        const stale = Date.now() - data.at > STALE;
+        return `<div class="td-stats">
+            ${stat(selecting ? 'Selecionadas' : 'Aldeias', selecting ? `${TWK.format(counted.length)} de ${TWK.format(list.length)}` : TWK.format(list.length))}
+            ${stat('Defesa', TWK.format(sum(counted, v => pop(v.home))))}
+            ${stat('A caminho', TWK.format(sum(counted, v => pop(v.coming))))}
+            ${stat('Falta', target() ? TWK.format(sum(counted, short)) : '–')}
+            ${stat(`Atualizado ${ago(data.at)}`, new Date(data.at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }), stale ? ' td-stale' : '')}
+        </div>`;
+    };
+
+    const copier = selecting => {
+        const lines = exported().length;
+        const tip = selecting ? 'Só as aldeias selecionadas' : view.member === ALL ? 'Aldeias visíveis de todos os membros' : `Só as aldeias de ${TWK.escape(data.members[view.member] || '')}`;
+        return `<button class="twk-btn td-export"${lines ? '' : ' disabled'} data-tip="${tip}">${TWK.ICON.copy}Copiar o que falta${lines ? ` (${TWK.format(lines)})` : ''}</button>`;
+    };
+
+    const foot = counted => `<div class="td-foot">
+        <span></span><span>Total</span><span></span>
+        ${guards().map(u => sum(counted, v => v.home[u.i])).map(total => `<span class="td-num" data-tip="${TWK.format(total)}">${compact(total)}</span>`).join('')}
+        ${cell(sum(counted, v => pop(v.coming)))}
+        <span></span>
+        ${cell(incoming(counted), ' td-missing')}
+        <span></span>
+        <span class="td-num td-pop">${TWK.format(sum(counted, v => pop(v.home)))}</span>
+        ${cell(sum(counted, short), ' td-missing')}
+    </div>`;
+
+    const member = (id, name, sub, villages) => {
+        const attacks = incoming(villages);
+        return `<button class="td-member${id === view.member ? ' td-active' : ''}" data-member="${id}">
+            <div><span>${name}</span><small>${sub}</small></div><b class="${attacks ? 'td-attacked' : ''}" data-tip="Ataques chegando">${TWK.format(attacks)}</b>
+        </button>`;
+    };
 
     const goals = () => `${guards().map(u => `<label class="td-goal" data-unit="${u.unit}" data-tip="${u.unit}"><img src="${u.src}" alt="${u.unit}">${TWK.number('td-goal-input', { min: 0, step: 1000, value: settings.goal[u.unit] || 0 })}</label>`).join('')}
         <label class="td-goal" data-tip="Muralha mínima. Abaixo disso a aldeia aparece no mapa mesmo com tropa"><img src="${window.image_base}buildings/wall.webp" alt="">${TWK.number('td-wall-input', { min: 0, max: 20, step: 1, value: settings.wall })}</label>
@@ -446,35 +505,28 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
         const all = zone();
         const goal = target();
         const list = visible().sort(sorter());
-        const stale = Date.now() - data.at > STALE;
         const foes = [...new Set(all.map(v => v.foe).filter(Boolean))].sort((a, b) => tag(a).localeCompare(tag(b)));
-        const lines = exported().length;
+        const counted = picked(list);
+        const every = list.length > 0 && list.every(v => chosen.has(v.id));
         const area = settings.area;
-        const columns = guards().map(u => ({ ...u, total: list.reduce((total, v) => total + v.home[u.i], 0) }));
+        const columns = guards();
         const members = Object.entries(data.members)
             .map(([id, name]) => ({ id, name, villages: all.filter(v => v.player === id) }))
             .filter(m => m.villages.length)
-            .sort((a, b) => a.name.localeCompare(b.name));
-        const home = list.reduce((sum, v) => sum + pop(v.home), 0);
-        const coming = list.reduce((sum, v) => sum + pop(v.coming), 0);
-        const missing = list.reduce((sum, v) => sum + short(v), 0);
+            .map(m => ({ ...m, attacks: incoming(m.villages) }))
+            .sort((a, b) => b.attacks - a.attacks || a.name.localeCompare(b.name));
         const scroll = $content.find('.td-members').scrollTop();
-        const cols = `68px minmax(70px, 1fr) repeat(${columns.length}, 58px) 88px 104px 36px 36px 84px 80px`;
+        const rows = $content.find('.td-body').scrollTop();
+        const cols = `16px 68px minmax(70px, 1fr) repeat(${columns.length}, 58px) 88px 104px 36px 36px 84px 80px`;
         const icon = (src, tip) => `<img src="${window.image_base}${src}" alt="" data-tip="${tip}">`;
         $content.html(`
-            <div class="td-stats">
-                ${stat('Aldeias', TWK.format(list.length))}
-                ${stat('Defesa', TWK.format(home))}
-                ${stat('A caminho', TWK.format(coming))}
-                ${stat('Falta', goal ? TWK.format(missing) : '–')}
-                ${stat(`Atualizado ${ago(data.at)}`, new Date(data.at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }), stale ? ' td-stale' : '')}
-            </div>
+            ${stats(list, counted)}
             <div class="td-main">
                 <aside class="td-side">
                     <span class="twk-label">Membros${data.hidden.length ? `<small data-tip="${TWK.escape(data.hidden.join(', '))}">${data.hidden.length} sem permissão</small>` : ''}</span>
                     <div class="td-members">
-                        ${member(ALL, 'Todos os membros', TWK.plural(members.length, 'membro', 'membros'), all.length)}
-                        ${members.map(m => member(m.id, TWK.escape(m.name), `${compact(m.villages.reduce((sum, v) => sum + pop(v.home), 0))} de defesa`, m.villages.length)).join('')}
+                        ${member(ALL, 'Todos os membros', TWK.plural(members.length, 'membro', 'membros'), all)}
+                        ${members.map(m => member(m.id, TWK.escape(m.name), `${compact(sum(m.villages, v => pop(v.home)))} de defesa`, m.villages)).join('')}
                     </div>
                 </aside>
                 <section class="td-area">
@@ -495,7 +547,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                         </div>
                         <div class="td-tools">
                             <button class="twk-btn td-tool td-goalbtn${goal ? ' td-goalset' : ''}${goalOpen ? ' td-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
-                            <button class="twk-btn td-export"${lines ? '' : ' disabled'} data-tip="${view.member === ALL ? 'Aldeias visíveis de todos os membros' : `Só as aldeias de ${TWK.escape(data.members[view.member] || '')}`}">${TWK.ICON.copy}Copiar o que falta${lines ? ` (${TWK.format(lines)})` : ''}</button>
+                            ${copier(counted !== list)}
                         </div>
                     </div>
                     <div class="td-goalrow"${goalOpen ? '' : ' hidden'}>
@@ -505,6 +557,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                     ${goal ? '' : '<div class="td-hint">Defina a meta em 📊 para ver as aldeias que precisam de defesa. Sem meta, o mapa mostra só ataques chegando e muralha baixa.</div>'}
                     <div class="td-table" style="--cols: ${cols}">
                         <div class="td-head">
+                            <input type="checkbox" class="td-pick-all"${every ? ' checked' : ''}${list.length ? '' : ' disabled'} data-tip="Selecionar todas. Shift+clique seleciona um intervalo">
                             <span>Aldeia</span>
                             ${header('member', 'Membro')}
                             ${columns.map(u => header(`unit:${u.i}`, `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`, ' td-end')).join('')}
@@ -516,7 +569,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                             ${header('missing', '<span data-tip="População que falta para a meta, contando o que está a caminho">Falta</span>', ' td-end')}
                         </div>
                         <div class="td-body">
-                            ${list.map(v => `<div class="td-row" data-x="${v.x}" data-y="${v.y}">
+                            ${list.map(v => `<div class="td-row${chosen.has(v.id) ? ' td-chosen' : ''}" data-x="${v.x}" data-y="${v.y}">
+                                <input type="checkbox" class="td-pick" data-id="${v.id}"${chosen.has(v.id) ? ' checked' : ''}>
                                 <b class="twk-mono">${v.x}|${v.y}</b>
                                 <span class="td-owner">${TWK.escape(data.members[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.home[u.i])).join('')}
@@ -528,24 +582,34 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
                                 ${goal ? cell(short(v), ' td-missing') : cell(0)}
                             </div>`).join('')}
                         </div>
-                        <div class="td-foot">
-                            <span>Total</span><span></span>
-                            ${columns.map(u => `<span class="td-num" data-tip="${TWK.format(u.total)}">${compact(u.total)}</span>`).join('')}
-                            ${cell(coming)}
-                            <span></span><span></span><span></span>
-                            <span class="td-num td-pop">${TWK.format(home)}</span>
-                            ${cell(missing, ' td-missing')}
-                        </div>
+                        ${foot(counted)}
                     </div>
                 </section>
             </div>
         `);
         $content.find('.td-members').scrollTop(scroll);
+        $content.find('.td-body').scrollTop(rows);
+    };
+
+    const refresh = () => {
+        const list = visible();
+        const counted = picked(list);
+        $content.find('.td-stats').replaceWith(stats(list, counted));
+        $content.find('.td-foot').replaceWith(foot(counted));
+        $content.find('.td-export').replaceWith(copier(counted !== list));
+        $content.find('.td-pick').each((_, el) => {
+            const on = chosen.has(el.dataset.id);
+            el.checked = on;
+            $(el).closest('.td-row').toggleClass('td-chosen', on);
+        });
+        $content.find('.td-pick-all').prop('checked', list.length > 0 && list.every(v => chosen.has(v.id)));
+        index();
+        TWMap.reload();
     };
 
     const index = () => {
         const pinned = view.tier !== ALL;
-        marks = new Map(visible().filter(v => pinned || needy(v)).map(v => [`${v.x}|${v.y}`, { ...v, color: paintColor(v) }]));
+        marks = new Map(visible().filter(v => pinned || needy(v) || chosen.has(v.id)).map(v => [`${v.x}|${v.y}`, { ...v, color: paintColor(v) }]));
     };
 
     const look = (kind, color) => {
@@ -636,11 +700,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     const select = (key, value) => {
         view[key] = value;
+        if (key === 'member') chosen = new Set();
         if (key !== 'tier') view.tier = ALL;
         update();
     };
 
-    const exported = () => visible()
+    const exported = () => picked(visible())
         .map(v => ({ v, need: lacking(v) }))
         .filter(({ need }) => need.some(Boolean))
         .map(({ v, need }) => `${v.x}|${v.y} ${need.join('/')}`);
@@ -773,6 +838,25 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
 
     $panel.on('click', '.td-refresh, .td-start', read);
     $panel.on('click', '.td-member', e => select('member', String($(e.currentTarget).data('member'))));
+    $panel.on('click', '.td-pick', e => {
+        e.stopPropagation();
+        const id = e.currentTarget.dataset.id;
+        const on = e.currentTarget.checked;
+        const ids = $content.find('.td-pick').get().map(el => el.dataset.id);
+        const from = ids.indexOf(pivot);
+        const to = ids.indexOf(id);
+        const range = e.shiftKey && from >= 0;
+        const span = range ? ids.slice(Math.min(from, to), Math.max(from, to) + 1) : [id];
+        span.forEach(key => on ? chosen.add(key) : chosen.delete(key));
+        pivot = id;
+        refresh();
+    });
+    $panel.on('click', '.td-pick-all', () => {
+        const ids = visible().map(v => v.id);
+        const every = ids.every(id => chosen.has(id));
+        chosen = every ? new Set() : new Set([...chosen, ...ids]);
+        refresh();
+    });
     $panel.on('click', '.td-row', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.td-export', () => TWK.copy(exported().join('\n'), 'Aldeias e tropas que faltam copiadas'));
     $panel.on('change', '.td-foe', e => select('foe', e.currentTarget.value));

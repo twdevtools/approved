@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.6';
+    const VERSION = '1.2.7';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -8,6 +8,8 @@
     const TZ_STEP = 15 * 60 * 1000;
     const POS_KEY = 'twkPositions';
     const FOLD_KEY = 'twkFolded';
+    const EDGE = 10;
+    const NUMBER = new Intl.NumberFormat('pt-BR');
     const CHECK = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E\")";
     const CHEVRON = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f7580' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
 
@@ -47,7 +49,7 @@
         .twk-panel {
             --bg: #0d0e11; --surface: #15171c; --hover: #1b1e24; --line: #262930; --line-hi: #3a3e47; --thumb: #2e323a;
             --text: #d4d7dd; --muted: #6f7580; --accent: #a33b3b; --ok: #4f9a5b; --warn: #e0a44a;
-            position: fixed; top: 18%; left: 40%; z-index: 12000;
+            position: fixed; top: 18%; left: 40%; z-index: 12000; max-width: calc(100vw - ${EDGE * 2}px);
             background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
             box-shadow: 0 18px 40px rgba(0, 0, 0, .55);
             font: 12px/1.4 ${FONT}; text-align: left;
@@ -162,7 +164,7 @@
     `;
 
     const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-    const format = n => n.toLocaleString('pt-BR');
+    const format = n => NUMBER.format(n);
     const plural = (n, one, many) => `${format(n)} ${n === 1 ? one : many}`;
     const escape = text => $('<i>').text(text).html();
     const url = path => `${game_data.link_base_pure}${path}`;
@@ -276,6 +278,14 @@
         return fits;
     };
 
+    const fit = $panel => {
+        const rect = $panel[0].getBoundingClientRect();
+        const left = Math.max(EDGE, Math.min(rect.left, innerWidth - rect.width - EDGE));
+        const top = Math.max(EDGE, Math.min(rect.top, innerHeight - rect.height - EDGE));
+        const outside = rect.width > 0 && (left !== rect.left || top !== rect.top);
+        if (outside) $panel.css({ left, top });
+    };
+
     const place = $panel => {
         const placed = restore($panel);
         if (placed) return;
@@ -329,8 +339,11 @@
             </div>
             <div class="twk-body">${body}</div>
         </div>`).appendTo('body');
+        const watcher = new ResizeObserver(() => fit($panel));
         const close = () => {
             onClose?.();
+            watcher.disconnect();
+            $(window).off(`resize.${id}`);
             $(`#${id}-dock`).remove();
             $panel.remove();
         };
@@ -339,6 +352,8 @@
         if (fold) toggle($panel, !!store.get(FOLD_KEY, {})[id]);
         if (window.mobiledevice) return $panel.addClass('twk-center');
         place($panel);
+        watcher.observe($panel[0]);
+        $(window).on(`resize.${id}`, () => fit($panel));
         if ($.fn.draggable) $panel.draggable({ handle: '.twk-head', cancel: '.twk-icon', containment: 'window', stop: () => remember($panel) });
         return $panel;
     };
