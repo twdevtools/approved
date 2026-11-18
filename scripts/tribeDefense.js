@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', dataType: 'script', cache: true }).then(() => {
     const page = game_data.screen === 'map';
     if (!page) return TWK.redirect('map', 'Redirecionando para o mapa...');
 
@@ -25,7 +25,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
     const NEIGHBORS = 5;
     const CELL = 10;
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
-    const WIDE = 1226;
+    const FRAME = 972;
+    const UNIT = 58;
+    const GAP = 10;
     const NARROW = 400;
     const ALL = '';
     const SHIELD = TWK.svg('<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6Z"/>');
@@ -53,7 +55,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
         title: 'Defesa da Tribo',
         sub: 'Aldeias dos membros, front e o que falta para a meta',
         icon: SHIELD,
-        width: WIDE,
+        width: NARROW,
         fold: true,
         dock: true,
         actions: `<button class="twk-icon td-refresh" data-tip="Atualizar">${TWK.ICON.refresh}</button>`,
@@ -128,7 +130,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
             #td-panel .td-tag { color: var(--muted); font-family: system-ui, sans-serif; }
             #td-panel .td-bar .td-tools { margin-left: auto; display: flex; gap: 6px; }
             #td-panel .td-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; overflow-y: hidden; }
-            #td-panel .td-head, #td-panel .td-row, #td-panel .td-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 10px; padding: 0 16px; }
+            #td-panel .td-head, #td-panel .td-row, #td-panel .td-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: ${GAP}px; padding: 0 16px; }
             #td-panel .td-head, #td-panel .td-foot { padding-right: 26px; }
             #td-panel .td-head, #td-panel .td-body, #td-panel .td-foot { min-width: min-content; }
             #td-panel .td-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
@@ -255,7 +257,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
     };
 
     const size = wide => {
-        $panel.css('width', wide ? WIDE : NARROW);
+        $panel.css('width', wide ? FRAME + guards().length * (UNIT + GAP) : NARROW);
         $content.toggleClass('td-compact', !wide);
     };
 
@@ -486,8 +488,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
 
     const member = (id, name, sub, villages) => {
         const attacks = incoming(villages);
+        const hidden = villages.every(v => v.attacks === null);
+        const tip = hidden ? 'Não compartilha os ataques' : 'Ataques chegando';
         return `<button class="td-member${id === view.member ? ' td-active' : ''}" data-member="${id}">
-            <div><span>${name}</span><small>${sub}</small></div><b class="${attacks ? 'td-attacked' : ''}" data-tip="Ataques chegando">${TWK.format(attacks)}</b>
+            <div><span>${name}</span><small>${sub}</small></div><b class="${attacks ? 'td-attacked' : ''}" data-tip="${tip}">${hidden ? '–' : TWK.format(attacks)}</b>
         </button>`;
     };
 
@@ -517,7 +521,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
             .sort((a, b) => b.attacks - a.attacks || a.name.localeCompare(b.name));
         const scroll = $content.find('.td-members').scrollTop();
         const rows = $content.find('.td-body').scrollTop();
-        const cols = `16px 68px minmax(70px, 1fr) repeat(${columns.length}, 58px) 88px 104px 36px 36px 84px 80px`;
+        const cols = `16px 68px minmax(70px, 1fr) repeat(${columns.length}, ${UNIT}px) 88px 104px 36px 36px 84px 80px`;
         const icon = (src, tip) => `<img src="${window.image_base}${src}" alt="" data-tip="${tip}">`;
         $content.html(`
             ${stats(list, counted)}
@@ -531,7 +535,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', 
                 </aside>
                 <section class="td-area">
                     <div class="td-bar">
-                        <label class="td-front" data-tip="Distância até a barreira das ${TWK.plural(Object.keys(data.tribes).length, 'tribo inimiga', 'tribos inimigas')} da diplomacia. Inimigas isoladas não contam">
+                        <label class="td-front" data-tip="Mostra suas aldeias a até ${TWK.plural(settings.reach, 'campo', 'campos')} de um bloco inimigo. Bloco é uma aldeia inimiga com pelo menos ${NEIGHBORS} outras inimigas a até ${CLOSE} campos dela, então inimigas isoladas não contam. Inimigos são as ${TWK.plural(Object.keys(data.tribes).length, 'tribo marcada', 'tribos marcadas')} na diplomacia">
                             <span class="twk-label">Front até</span>
                             ${TWK.number('td-front-input', { min: 1, max: LIMIT, step: 1, value: settings.reach })}
                             <span class="twk-caption">campos</span>

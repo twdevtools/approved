@@ -1,4 +1,4 @@
-$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.7/twkit.js', dataType: 'script', cache: true }).then(() => {
+$.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', dataType: 'script', cache: true }).then(() => {
     const KEY = `twResourceSender_${game_data.world}`;
     const PATH = 'overview_villages&mode=prod&group=';
     const ROWS = '#production_table .quickedit-vn';

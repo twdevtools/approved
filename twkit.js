@@ -1,5 +1,5 @@
 (() => {
-    const VERSION = '1.2.7';
+    const VERSION = '1.2.8';
     if (window.TWK?.version === VERSION) return;
 
     const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -49,7 +49,7 @@
         .twk-panel {
             --bg: #0d0e11; --surface: #15171c; --hover: #1b1e24; --line: #262930; --line-hi: #3a3e47; --thumb: #2e323a;
             --text: #d4d7dd; --muted: #6f7580; --accent: #a33b3b; --ok: #4f9a5b; --warn: #e0a44a;
-            position: fixed; top: 18%; left: 40%; z-index: 12000; max-width: calc(100vw - ${EDGE * 2}px);
+            position: fixed; top: 18%; left: 40%; z-index: 12000;
             background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
             box-shadow: 0 18px 40px rgba(0, 0, 0, .55);
             font: 12px/1.4 ${FONT}; text-align: left;
@@ -279,9 +279,12 @@
     };
 
     const fit = $panel => {
+        const view = document.documentElement;
+        const frame = $panel.outerWidth() - $panel.width();
+        $panel.css('max-width', view.clientWidth - EDGE * 2 - frame);
         const rect = $panel[0].getBoundingClientRect();
-        const left = Math.max(EDGE, Math.min(rect.left, innerWidth - rect.width - EDGE));
-        const top = Math.max(EDGE, Math.min(rect.top, innerHeight - rect.height - EDGE));
+        const left = Math.max(EDGE, Math.min(rect.left, view.clientWidth - rect.width - EDGE));
+        const top = Math.max(EDGE, Math.min(rect.top, view.clientHeight - rect.height - EDGE));
         const outside = rect.width > 0 && (left !== rect.left || top !== rect.top);
         if (outside) $panel.css({ left, top });
     };
