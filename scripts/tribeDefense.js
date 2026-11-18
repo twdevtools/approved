@@ -562,12 +562,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.6/twkit.js', 
             display: 'flex', alignItems: 'center', gap: 1, padding: '0 2px', borderRadius: 3,
             background, color: '#fff', font: '700 9px/12px system-ui, sans-serif', whiteSpace: 'nowrap',
         })
-        .append($(`<img src="${window.image_base}${src}" alt="">`).css({ width: 9, height: 9 }), text);
+        .append(src ? $(`<img src="${window.image_base}${src}" alt="">`).css({ width: 9, height: 9 }) : [], text);
 
     const badges = v => [
         chip({ left: 1, bottom: 1 }, 'buildings/farm.webp', compact(pop(stock(v)))),
         v.wall === null ? null : chip({ left: 1, top: 1 }, 'buildings/wall.webp', v.wall, weak(v) ? 'rgba(190, 30, 30, .9)' : undefined),
-        v.attacks ? chip({ right: 1, top: 1 }, 'unit/att.webp', v.attacks, 'rgba(190, 30, 30, .9)') : null,
+        v.attacks ? chip({ right: 1, top: 1 }, null, v.attacks, 'rgba(190, 30, 30, .9)') : null,
     ].filter(Boolean);
 
     const mark = sector => {
