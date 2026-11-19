@@ -41,7 +41,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     let data = stored?.version === VERSION ? stored : null;
     let reading = false;
 
-    const settings = { goal: {}, reach: 5, wall: 0, area: null, ...TWK.store.get(SETTINGS_KEY, {}) };
+    const settings = { goal: { spear: 30000, sword: 30000 }, reach: 5, wall: 0, area: null, ...TWK.store.get(SETTINGS_KEY, {}) };
     settings.reach = Math.min(LIMIT, Math.max(1, settings.reach));
     const legacy = settings.area && !Array.isArray(settings.area);
     if (legacy) settings.area = [[settings.area.x1, settings.area.y1], [settings.area.x2, settings.area.y1], [settings.area.x2, settings.area.y2], [settings.area.x1, settings.area.y2]];
