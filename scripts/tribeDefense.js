@@ -7,6 +7,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const BASE = '#ffffff';
     const ALERT = '#ff453a';
     const CHOSEN = '#0a84ff';
+    const UNKNOWN = '#8e8e93';
     const TIERS = [
         { min: 1, color: '#30d158', icon: '🟢' },
         { min: .5, color: '#ffd60a', icon: '🟡' },
@@ -35,7 +36,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const BELOW = 'below';
     const SHIELD = TWK.svg('<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6Z"/>');
 
-    const VERSION = 6;
+    const VERSION = 7;
 
     const stored = TWK.store.get(KEY);
     let data = stored?.version === VERSION ? stored : null;
@@ -216,12 +217,15 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return found;
     };
 
-    const hostile = async allies => {
+    const hostile = async (allies, hidden) => {
         const [villages, players] = await Promise.all([TWK.get('/map/village.txt'), TWK.get('/map/player.txt')]);
         const foes = new Map(players.split('\n').map(line => line.split(',')).filter(([, , ally]) => ally in allies).map(([id, , ally]) => [id, ally]));
-        const points = villages.split('\n').map(line => line.split(',')).filter(([, , , , player]) => foes.has(player)).map(([, , x, y, player]) => ({ x: +x, y: +y, ally: foes.get(player) }));
+        const rows = villages.split('\n').map(line => line.split(','));
+        const points = rows.filter(([, , , , player]) => foes.has(player)).map(([, , x, y, player]) => ({ x: +x, y: +y, ally: foes.get(player) }));
         const all = bucket(points);
-        return bucket(points.filter(p => near(all, p, CLOSE).length > NEIGHBORS));
+        const grid = bucket(points.filter(p => near(all, p, CLOSE).length > NEIGHBORS));
+        const unknown = rows.filter(([, , , , player]) => hidden.has(player)).map(([, , x, y]) => ({ x: +x, y: +y }));
+        return { grid, unknown };
     };
 
     const closest = (grid, v) => {
@@ -284,7 +288,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const read = async () => {
         reading = true;
         $refresh.toggleClass('twk-spinning', !!data).prop('disabled', true);
-        const result = { version: VERSION, at: Date.now(), units: [], pop: {}, power: {}, members: {}, hidden: [], tribes: {}, villages: {} };
+        const result = { version: VERSION, at: Date.now(), units: [], pop: {}, power: {}, members: {}, hidden: [], unknown: [], tribes: {}, villages: {} };
         let allowed = true;
         try {
             busy('Lendo os membros...');
@@ -292,11 +296,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             const $options = first.find('select[name="player_id"] option[value]');
             allowed = $options.length > 0;
             const members = $options.not('[disabled]').get().map(el => [el.value, $.trim(el.textContent)]);
-            result.hidden = $options.filter('[disabled]').get().map(el => $.trim(el.textContent));
+            const $hidden = $options.filter('[disabled]');
+            result.hidden = $hidden.get().map(el => $.trim(el.textContent));
             Object.assign(result, await unitInfo());
             busy('Lendo os inimigos da diplomacia...');
             result.tribes = enemies(await TWK.doc(TWK.url(CONTRACTS)));
-            const grid = await hostile(result.tribes);
+            const { grid, unknown } = await hostile(result.tribes, new Set($hidden.get().map(el => el.value)));
+            result.unknown = unknown.map(v => ({ ...v, ...closest(grid, v) })).filter(v => v.gap !== null);
             for (const [n, [id, name]] of members.entries()) {
                 if (!reading) break;
                 busy(`Lendo ${name} (${n + 1} de ${members.length})...`, n / members.length);
@@ -658,9 +664,17 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         TWMap.reload();
     };
 
+    const strangers = () => {
+        const open = view.member === ALL && view.tier === ALL;
+        if (!open) return [];
+        return data.unknown.filter(v => front(v) && inside(v) && (view.foe === ALL || v.foe === view.foe));
+    };
+
     const index = () => {
         const pinned = view.tier !== ALL;
-        marks = new Map(visible().filter(v => pinned || needy(v) || chosen.has(v.id)).map(v => [`${v.x}|${v.y}`, { ...v, color: paintColor(v) }]));
+        const known = visible().filter(v => pinned || needy(v) || chosen.has(v.id)).map(v => [`${v.x}|${v.y}`, { ...v, color: paintColor(v) }]);
+        const unknown = strangers().map(v => [`${v.x}|${v.y}`, { ...v, unknown: true, color: UNKNOWN }]);
+        marks = new Map([...unknown, ...known]);
     };
 
     const look = (kind, color) => {
@@ -696,7 +710,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                 if (!v) continue;
                 const $el = $(`<div class="td-mark" data-key="${x}|${y}" data-kind="${kind}">`)
                     .css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look(kind, v.color) });
-                if (kind === 'main') $el.append(badges(v));
+                const detailed = kind === 'main' && !v.unknown;
+                if (detailed) $el.append(badges(v));
                 sector.appendElement($el[0], x - sector.x, y - sector.y);
             }
         }
@@ -734,7 +749,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         TWMap.mapHandler.tdClick ??= TWMap.mapHandler.onClick;
         TWMap.mapHandler.onClick = function (x, y, event) {
             const village = picking && marks.get(`${x}|${y}`);
-            if (!village) return TWMap.mapHandler.tdClick.call(this, x, y, event);
+            const pickable = village && !village.unknown;
+            if (!pickable) return TWMap.mapHandler.tdClick.call(this, x, y, event);
             const on = !chosen.has(village.id);
             if (on) chosen.add(village.id);
             else chosen.delete(village.id);
