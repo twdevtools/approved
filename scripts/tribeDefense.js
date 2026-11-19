@@ -8,10 +8,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const ALERT = '#ff453a';
     const CHOSEN = '#0a84ff';
     const TIERS = [
-        { min: 1, color: '#30d158' },
-        { min: .5, color: '#ffd60a' },
-        { min: .25, color: '#ff9f0a' },
-        { min: 0, color: '#ff453a' },
+        { min: 1, color: '#30d158', icon: '🟢' },
+        { min: .5, color: '#ffd60a', icon: '🟡' },
+        { min: .25, color: '#ff9f0a', icon: '🟠' },
+        { min: 0, color: '#ff453a', icon: '🔴' },
     ];
     const DEFENSE = 'ally&mode=members_defense';
     const BUILDINGS = 'ally&mode=members_buildings';
@@ -25,7 +25,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const NEIGHBORS = 5;
     const CELL = 10;
     const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
-    const FRAME = 972;
+    const FRAME = 986;
     const UNIT = 58;
     const GAP = 10;
     const NARROW = 400;
@@ -76,7 +76,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-progress i { flex: 1; height: 4px; border-radius: 2px; background: var(--surface); overflow: hidden; }
             #td-panel .td-progress b { display: block; width: 0; height: 100%; background: var(--accent); transition: width .3s; }
             #td-panel .td-reading .td-stats, #td-panel .td-reading .td-main { opacity: .45; pointer-events: none; }
-            #td-panel .td-tool.td-goalset { color: #30d158; }
+            #td-panel .td-tool.td-set { color: #30d158; }
             #td-panel .td-goalrow {
                 flex: none; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px;
                 background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
@@ -87,17 +87,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-goal img { position: absolute; left: 9px; top: 50%; z-index: 1; width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none; }
             #td-panel .td-goal input { padding-left: 32px; }
             #td-panel .td-goals small { margin-left: auto; color: var(--muted); font-size: 11px; }
-            #td-panel .td-tiers { display: flex; gap: 8px; }
-            #td-panel .td-tier {
-                height: 26px; padding: 0 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;
-                background: none; border: 1px solid var(--line); border-radius: 13px; cursor: pointer;
-            }
-            #td-panel .td-tier:hover { border-color: var(--line-hi); background: var(--hover); }
-            #td-panel .td-tier.td-active { border-color: var(--tier); background: var(--hover); }
-            #td-panel .td-tier i { width: 10px; height: 10px; flex: none; border-radius: 50%; border: 1px solid #000; }
-            #td-panel .td-tier span { color: var(--muted); }
-            #td-panel .td-tier b { font-weight: 600; }
-            #td-panel .td-tiers small { color: var(--muted); font-size: 11px; }
             #td-panel .td-stats { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line); }
             #td-panel .td-stat { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); }
             #td-panel .td-stat:last-child { border-right: 0; }
@@ -121,12 +110,17 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-member > b { flex: none; min-width: 28px; padding: 1px 6px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; text-align: center; }
             #td-panel .td-member > b.td-attacked { background: rgba(255, 69, 58, .18); color: #ff453a; }
             #td-panel .td-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-            #td-panel .td-front { position: relative; display: flex; align-items: center; gap: 8px; }
-            #td-panel .td-front .twk-number { width: 110px; }
-            #td-panel .td-front .twk-number input { padding-right: 72px; }
-            #td-panel .td-front .twk-caption { position: absolute; right: 28px; color: var(--muted); pointer-events: none; }
+            #td-panel .td-front { position: relative; display: flex; align-items: center; }
+            #td-panel .td-front .twk-number { width: 168px; }
+            #td-panel .td-front .twk-number input { padding-left: 80px; padding-right: 70px; }
+            #td-panel .td-front .twk-caption { position: absolute; z-index: 1; color: var(--muted); pointer-events: none; }
+            #td-panel .td-front .td-before {
+                top: 1px; bottom: 1px; left: 1px; padding: 0 10px; display: flex; align-items: center;
+                background: var(--hover); border-right: 1px solid var(--line); border-radius: 5px 0 0 5px;
+            }
+            #td-panel .td-front .td-after { right: 28px; }
             #td-panel .td-foe { width: 150px; }
-            #td-panel .td-zone { display: flex; align-items: center; gap: 4px; }
+            #td-panel .td-tier { width: 170px; }
             #td-panel .td-zone-draw.td-active { border-color: #0a84ff; color: #0a84ff; }
             #td-panel .td-hint { flex: none; padding: 8px 12px; border: 1px dashed var(--line-hi); border-radius: 8px; color: var(--muted); font-size: 11px; }
             #td-panel .td-tag { color: var(--muted); font-family: system-ui, sans-serif; }
@@ -150,6 +144,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-row:last-child { border-bottom: 0; }
             #td-panel .td-row:hover { background: var(--hover); }
             #td-panel .td-row.td-chosen { background: rgba(10, 132, 255, .1); }
+            #td-panel .td-coord { display: flex; align-items: center; gap: 6px; }
+            #td-panel .td-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; }
             #td-panel .td-pick, #td-panel .td-pick-all { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); cursor: pointer; }
             #td-panel .td-foot { height: 42px; flex: none; background: var(--surface); border-top: 1px solid var(--line); font-weight: 600; }
             #td-panel .td-num { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-family: ui-monospace, Consolas, monospace; }
@@ -381,23 +377,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return `${b.low}–${b.high}`;
     };
 
-    const describe = (i, count) => {
-        const b = bounds(i);
-        const villages = TWK.plural(count, 'aldeia', 'aldeias');
-        if (!i) return `${villages} com ${b.low} ou mais de população`;
-        if (!TIERS[i].min) return `${villages} com menos de ${b.next} de população`;
-        return `${villages} com ${b.low} a ${b.high} de população`;
-    };
-
     const tiers = () => {
-        if (!target()) return '<small>Defina a meta por aldeia para colorir o mapa.</small>';
         const list = scope();
-        return TIERS.map((t, i) => {
+        const options = TIERS.map((t, i) => {
             const count = list.filter(v => tier(v.id) === t.color).length;
-            return `<button class="td-tier${view.tier === t.color ? ' td-active' : ''}" style="--tier: ${t.color}" data-tier="${t.color}" data-tip="${describe(i, count)}">
-                <i style="background: ${t.color}"></i><span>${range(i)}</span><b class="twk-mono">${TWK.format(count)}</b>
-            </button>`;
-        }).join('');
+            return `<option value="${t.color}"${view.tier === t.color ? ' selected' : ''}>${t.icon} ${range(i)} (${TWK.format(count)})</option>`;
+        });
+        return `<option value="${ALL}">Todas as faixas</option>${options.join('')}`;
     };
 
     const compact = n => {
@@ -523,7 +509,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             .sort((a, b) => b.attacks - a.attacks || a.name.localeCompare(b.name));
         const scroll = $content.find('.td-members').scrollTop();
         const rows = $content.find('.td-body').scrollTop();
-        const cols = `16px 68px minmax(70px, 1fr) repeat(${columns.length}, ${UNIT}px) 88px 104px 36px 36px 84px 80px`;
+        const cols = `16px 82px minmax(70px, 1fr) repeat(${columns.length}, ${UNIT}px) 88px 104px 36px 36px 84px 80px`;
         const icon = (src, tip) => `<img src="${window.image_base}${src}" alt="" data-tip="${tip}">`;
         $content.html(`
             ${stats(list, counted)}
@@ -538,26 +524,23 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                 <section class="td-area">
                     <div class="td-bar">
                         <label class="td-front">
-                            <span class="twk-label">Front até</span>
+                            <span class="twk-caption td-before">Front até</span>
                             ${TWK.number('td-front-input', { min: 1, max: LIMIT, step: 1, value: settings.reach })}
-                            <span class="twk-caption">${settings.reach === 1 ? 'campo' : 'campos'}</span>
+                            <span class="twk-caption td-after">${settings.reach === 1 ? 'campo' : 'campos'}</span>
                         </label>
                         <select class="td-foe">
                             <option value="${ALL}">Todos os inimigos</option>
                             ${foes.map(id => `<option value="${id}"${id === view.foe ? ' selected' : ''}>${tag(id)}</option>`).join('')}
                         </select>
-                        <div class="td-zone">
-                            <button class="twk-btn td-zone-draw${drawing ? ' td-active' : ''}"${area ? ' data-tip="Desenhar de novo"' : ''}>${TWK.ICON.pen}${area ? 'Área desenhada' : 'Desenhar área'}</button>
-                            ${area ? `<button class="twk-btn td-tool td-zone-clear" data-tip="Limpar a área">${TWK.ICON.close}</button>` : ''}
-                        </div>
+                        ${goal ? `<select class="td-tier">${tiers()}</select>` : ''}
                         <div class="td-tools">
-                            <button class="twk-btn td-tool td-goalbtn${goal ? ' td-goalset' : ''}${goalOpen ? ' td-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
+                            <button class="twk-btn td-tool td-zone-draw${area ? ' td-set' : ''}${drawing ? ' td-active' : ''}" data-tip="${area ? 'Limpar a área' : 'Desenhar área'}">${TWK.ICON.pen}</button>
+                            <button class="twk-btn td-tool td-goalbtn${goal ? ' td-set' : ''}${goalOpen ? ' td-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
                             ${copier(counted !== list)}
                         </div>
                     </div>
                     <div class="td-goalrow"${goalOpen ? '' : ' hidden'}>
                         <div class="td-goals">${goals()}</div>
-                        <div class="td-tiers">${tiers()}</div>
                     </div>
                     ${goal ? '' : '<div class="td-hint">Defina a meta em 📊 para ver as aldeias que precisam de defesa. Sem meta, o mapa mostra só ataques chegando e muralha baixa.</div>'}
                     <div class="td-table" style="--cols: ${cols}">
@@ -576,7 +559,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="td-body">
                             ${list.map(v => `<div class="td-row${chosen.has(v.id) ? ' td-chosen' : ''}" data-x="${v.x}" data-y="${v.y}">
                                 <input type="checkbox" class="td-pick" data-id="${v.id}"${chosen.has(v.id) ? ' checked' : ''}>
-                                <b class="twk-mono">${v.x}|${v.y}</b>
+                                <b class="twk-mono td-coord">${goal ? `<i class="td-dot" style="background: ${tier(v.id)}"></i>` : ''}${v.x}|${v.y}</b>
                                 <span class="td-owner">${TWK.escape(data.members[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.home[u.i])).join('')}
                                 ${cell(pop(v.coming))}
@@ -864,8 +847,11 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         view.sort = reset ? null : { key, dir: same ? -first : first };
         render();
     });
-    $panel.on('click', '.td-zone-draw', draw);
-    $panel.on('click', '.td-zone-clear', () => limit(null));
+    $panel.on('click', '.td-zone-draw', () => {
+        const clear = !drawing && !!settings.area;
+        if (clear) return limit(null);
+        draw();
+    });
     $panel.on('change', '.td-wall-input', e => {
         settings.wall = Math.min(20, Math.max(0, parseInt(e.currentTarget.value) || 0));
         save();
@@ -881,18 +867,15 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         settings.goal[$(e.currentTarget).closest('.td-goal').data('unit')] = Math.max(0, parseInt(e.currentTarget.value) || 0);
         save();
         $panel.find('.td-target').text(TWK.format(target()));
-        $panel.find('.td-tiers').html(tiers());
-        $panel.find('.td-goalbtn').toggleClass('td-goalset', !!target());
+        $panel.find('.td-tier').html(tiers());
+        $panel.find('.td-goalbtn').toggleClass('td-set', !!target());
         restyle();
     });
     $panel.on('change', '.td-goal-input', () => {
         view.tier = ALL;
         update();
     });
-    $panel.on('click', '.td-tier', e => {
-        const color = $(e.currentTarget).data('tier');
-        select('tier', view.tier === color ? ALL : color);
-    });
+    $panel.on('change', '.td-tier', e => select('tier', e.currentTarget.value));
     $panel.on('click', '.td-goalbtn', () => {
         goalOpen = !goalOpen;
         $panel.find('.td-goalrow').prop('hidden', !goalOpen);
