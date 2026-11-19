@@ -39,10 +39,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         css: `
             #sm-panel .twk-body { padding: 0; gap: 0; max-height: none; overflow: visible; }
             #sm-panel .sm-content { height: min(620px, 72vh); display: flex; flex-direction: column; }
-            #sm-panel .sm-content.sm-compact { height: auto; padding: 28px 24px 24px; align-items: center; gap: 18px; }
-            #sm-panel .sm-compact .twk-idle { padding: 0; }
-            #sm-panel .sm-compact .twk-idle p { max-width: 300px; }
-            #sm-panel .sm-compact .twk-btn { min-width: 180px; }
+            #sm-panel .sm-content.sm-compact { height: auto; padding: 16px; gap: 12px; }
+            #sm-panel .sm-empty { display: flex; flex-direction: column; gap: 4px; }
+            #sm-panel .sm-empty b { font-size: 13px; font-weight: 600; }
+            #sm-panel .sm-empty p { margin: 0; color: var(--muted); font-size: 11px; }
             #sm-panel .sm-content > .twk-loading, #sm-panel .sm-content > .twk-idle { flex: 1; }
             #sm-panel .sm-progress { flex: none; padding: 10px 16px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
             #sm-panel .sm-progress span { flex: none; min-width: 170px; }
@@ -183,7 +183,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const read = async () => {
         reading = true;
-        $refresh.addClass('twk-spinning').prop('disabled', true);
+        $refresh.toggleClass('twk-spinning', !!data).prop('disabled', true);
         const result = { at: Date.now(), units: [], players: {}, allies: {}, villages: {} };
         try {
             busy('Lendo a página 1...');
@@ -266,7 +266,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         size(!!data);
         $content.removeClass('sm-reading');
         if (!data) return $content.html(`
-            ${TWK.idle(TWK.ICON.target, 'Nenhum apoio lido ainda', 'Leia os apoios que você está enviando para ver quem você apoia, as tropas em cada aldeia e marcar tudo no mapa.')}
+            <div class="sm-empty"><b>Nenhum apoio lido</b><p>Leia os apoios para ver quem você apoia e as tropas.</p></div>
             <button class="twk-btn twk-primary sm-start">${TWK.ICON.refresh}Ler apoios</button>
         `);
         const all = Object.values(data.villages);

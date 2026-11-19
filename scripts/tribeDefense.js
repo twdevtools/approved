@@ -35,7 +35,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const BELOW = 'below';
     const SHIELD = TWK.svg('<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6Z"/>');
 
-    const VERSION = 5;
+    const VERSION = 6;
 
     const stored = TWK.store.get(KEY);
     let data = stored?.version === VERSION ? stored : null;
@@ -57,7 +57,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const $panel = TWK.panel({
         id: 'td-panel',
         title: 'Defesa da Tribo',
-        sub: 'Aldeias dos membros, front e o que falta para a meta',
+        sub: 'Front da tribo e o que falta para a meta',
         icon: SHIELD,
         width: NARROW,
         fold: true,
@@ -71,10 +71,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         css: `
             #td-panel .twk-body { padding: 0; gap: 0; max-height: none; overflow: visible; }
             #td-panel .td-content { height: min(620px, 72vh); display: flex; flex-direction: column; }
-            #td-panel .td-content.td-compact { height: auto; padding: 28px 24px 24px; align-items: center; gap: 18px; }
-            #td-panel .td-compact .twk-idle { padding: 0; }
-            #td-panel .td-compact .twk-idle p { max-width: 300px; }
-            #td-panel .td-compact .twk-btn { min-width: 180px; }
+            #td-panel .td-content.td-compact { height: auto; padding: 16px; gap: 12px; }
+            #td-panel .td-empty { display: flex; flex-direction: column; gap: 4px; }
+            #td-panel .td-empty b { font-size: 13px; font-weight: 600; }
+            #td-panel .td-empty p { margin: 0; color: var(--muted); font-size: 11px; }
             #td-panel .td-content > .twk-loading, #td-panel .td-content > .twk-idle { flex: 1; }
             #td-panel .td-progress { flex: none; padding: 10px 16px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
             #td-panel .td-progress span { flex: none; min-width: 220px; }
@@ -283,7 +283,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const read = async () => {
         reading = true;
-        $refresh.addClass('twk-spinning').prop('disabled', true);
+        $refresh.toggleClass('twk-spinning', !!data).prop('disabled', true);
         const result = { version: VERSION, at: Date.now(), units: [], pop: {}, power: {}, members: {}, hidden: [], tribes: {}, villages: {} };
         let allowed = true;
         try {
@@ -553,7 +553,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         size(!!data);
         $content.removeClass('td-reading');
         if (!data) return $content.html(`
-            ${TWK.idle(SHIELD, 'Nenhuma defesa lida ainda', 'Leia a defesa dos membros da tribo para ver as aldeias do front, o que falta em cada uma e marcar tudo no mapa.')}
+            <div class="td-empty"><b>Nenhuma defesa lida</b><p>Leia a defesa da tribo para ver o front e o que falta.</p></div>
             <button class="twk-btn twk-primary td-start">${TWK.ICON.refresh}Ler defesa</button>
         `);
         const all = zone();
