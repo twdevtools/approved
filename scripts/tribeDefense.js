@@ -140,6 +140,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-enemy .td-tag { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             #td-panel .td-stale b { color: #ff9f0a; }
             #td-panel .td-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
+            #td-panel .td-body > .twk-idle { height: 100%; justify-content: center; }
             #td-panel .td-row { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; }
             #td-panel .td-row:last-child { border-bottom: 0; }
             #td-panel .td-row:hover { background: var(--hover); }
@@ -483,6 +484,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         </button>`;
     };
 
+    const nothing = () => {
+        if (zone().length) return TWK.idle(SHIELD, 'Nenhuma aldeia com esses filtros', 'Troque o membro, o inimigo ou a faixa para ver outras aldeias.');
+        if (settings.area) return TWK.idle(SHIELD, 'Nenhuma aldeia na área', 'Desenhe outra área ou limpe a atual no lápis.');
+        return TWK.idle(SHIELD, 'Nenhuma aldeia no front', 'Aumente o front para pegar aldeias mais longe do inimigo.');
+    };
+
     const goals = () => `${guards().map(u => `<label class="td-goal" data-unit="${u.unit}" data-tip="${u.unit}"><img src="${u.src}" alt="${u.unit}">${TWK.number('td-goal-input', { min: 0, step: 1000, value: settings.goal[u.unit] || 0 })}</label>`).join('')}
         <label class="td-goal" data-tip="Muralha mínima"><img src="${window.image_base}buildings/wall.webp" alt="">${TWK.number('td-wall-input', { min: 0, max: 20, step: 1, value: settings.wall })}</label>
         <small>Meta: <b class="td-target twk-mono">${TWK.format(target())}</b> de população</small>`;
@@ -568,7 +575,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                                 <span class="td-num${weak(v) ? ' td-missing' : ''}">${v.wall ?? '–'}</span>
                                 <span class="td-num td-pop">${TWK.format(pop(v.home))}</span>
                                 ${goal ? cell(short(v), ' td-missing') : cell(0)}
-                            </div>`).join('')}
+                            </div>`).join('') || nothing()}
                         </div>
                         ${foot(counted)}
                     </div>
