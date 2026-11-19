@@ -19,6 +19,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const GUARDS = ['spear', 'sword', 'archer', 'spy', 'heavy'];
     const WEIGHT = { heavy: 4 };
     const DEFENSES = ['defense', 'defense_cavalry', 'defense_archer'];
+    const KINDS = ['Infantaria', 'Cavalaria', 'Arqueiro'];
     const STALE = 60 * 60 * 1000;
     const ENEMIES = 2;
     const LIMIT = 15;
@@ -338,16 +339,41 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * (data.power[data.units[i]?.unit]?.[k] || 0), 0));
     };
 
-    const strength = v => {
-        const need = power(data.units.map(u => settings.goal[u.unit] || 0));
+    const required = () => power(data.units.map(u => settings.goal[u.unit] || 0));
+
+    const shares = v => {
         const have = power(stock(v));
-        const shares = need.map((n, k) => have[k] / n).filter((_, k) => need[k] > 0);
-        return shares.length ? Math.min(...shares) : -1;
+        return required().map((n, k) => n ? have[k] / n : null);
     };
 
+    const strength = v => {
+        const list = shares(v).filter(share => share !== null);
+        return list.length ? Math.min(...list) : -1;
+    };
+
+    const breakdown = v => shares(v)
+        .map((share, k) => share === null ? '' : `${KINDS[k]} ${Math.floor(share * 100)}%`)
+        .filter(Boolean)
+        .join(' · ');
+
     const lacking = v => {
-        const gap = Math.max(0, 1 - strength(v));
-        return guards().map(u => Math.ceil((settings.goal[u.unit] || 0) * gap));
+        const need = required();
+        const have = power(stock(v));
+        const send = guards().map(() => 0);
+        const options = guards().map((u, k) => ({ ...u, k })).filter(u => settings.goal[u.unit] > 0);
+        need.forEach(() => {
+            const weakest = need.map((n, d) => ({ d, share: n ? have[d] / n : Infinity })).sort((a, b) => a.share - b.share)[0];
+            const covered = !options.length || weakest.share >= 1;
+            if (covered) return;
+            const value = u => (data.power[u.unit]?.[weakest.d] || 0) / (data.pop[u.unit] || 1);
+            const best = options.reduce((top, u) => value(u) > value(top) ? u : top);
+            const each = data.power[best.unit]?.[weakest.d] || 0;
+            if (!each) return;
+            const count = Math.ceil((need[weakest.d] - have[weakest.d]) / each);
+            send[best.k] += count;
+            have.forEach((_, d) => have[d] += count * (data.power[best.unit]?.[d] || 0));
+        });
+        return send;
     };
 
     const short = v => {
@@ -464,7 +490,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return `<span class="td-sort${active ? ' td-sorted' : ''}${extra}" data-sort="${key}">${content}${arrow}</span>`;
     };
 
-    const cell = (n, extra = '') => `<span class="td-num${n ? extra : ' td-zero'}">${n ? TWK.format(n) : '–'}</span>`;
+    const cell = (n, extra = '', tip = '') => `<span class="td-num${n ? extra : ' td-zero'}"${tip ? ` data-tip="${tip}"` : ''}>${n ? TWK.format(n) : '–'}</span>`;
 
     const incoming = villages => villages.reduce((sum, v) => sum + v.attacks, 0);
 
@@ -596,7 +622,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="td-body">
                             ${list.map(v => `<div class="td-row${chosen.has(v.id) ? ' td-chosen' : ''}" data-x="${v.x}" data-y="${v.y}">
                                 <input type="checkbox" class="td-pick" data-id="${v.id}"${chosen.has(v.id) ? ' checked' : ''}>
-                                <b class="twk-mono td-coord">${goal ? `<i class="td-dot" style="background: ${tier(v.id)}"></i>` : ''}${v.x}|${v.y}</b>
+                                <b class="twk-mono td-coord"${goal ? ` data-tip="${breakdown(v)}"` : ''}>${goal ? `<i class="td-dot" style="background: ${tier(v.id)}"></i>` : ''}${v.x}|${v.y}</b>
                                 <span class="td-owner">${TWK.escape(data.members[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.home[u.i])).join('')}
                                 ${cell(pop(v.coming))}
@@ -604,7 +630,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                                 ${cell(v.attacks, ' td-missing')}
                                 <span class="td-num${weak(v) ? ' td-missing' : ''}">${v.wall ?? '–'}</span>
                                 <span class="td-num td-pop">${TWK.format(pop(v.home))}</span>
-                                ${goal ? cell(short(v), ' td-missing') : cell(0)}
+                                ${goal ? cell(short(v), ' td-missing', breakdown(v)) : cell(0)}
                             </div>`).join('') || nothing()}
                         </div>
                         ${foot(counted)}
