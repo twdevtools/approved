@@ -18,6 +18,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const CONTRACTS = 'ally&mode=contracts';
     const GUARDS = ['spear', 'sword', 'archer', 'spy', 'heavy'];
     const WEIGHT = { heavy: 4 };
+    const DEFENSES = ['defense', 'defense_cavalry', 'defense_archer'];
     const STALE = 60 * 60 * 1000;
     const ENEMIES = 2;
     const LIMIT = 15;
@@ -33,7 +34,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const BELOW = 'below';
     const SHIELD = TWK.svg('<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6Z"/>');
 
-    const VERSION = 4;
+    const VERSION = 5;
 
     const stored = TWK.store.get(KEY);
     let data = stored?.version === VERSION ? stored : null;
@@ -176,9 +177,14 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const units = $doc => $doc.find('#ally_content table.vis img[src*="/unit/unit_"]').get()
         .map(img => ({ unit: img.getAttribute('src').match(/unit_(\w+)\./)[1], src: img.getAttribute('src') }));
 
-    const population = async () => {
+    const unitInfo = async () => {
         const xml = await $.ajax({ url: '/interface.php?func=get_unit_info', dataType: 'xml' });
-        return Object.fromEntries($(xml).find('config').children().get().map(el => [el.tagName, +$(el).children('pop').text() || 0]));
+        const list = $(xml).find('config').children().get();
+        const read = (el, tag) => +$(el).children(tag).text() || 0;
+        return {
+            pop: Object.fromEntries(list.map(el => [el.tagName, read(el, 'pop')])),
+            power: Object.fromEntries(list.map(el => [el.tagName, DEFENSES.map(tag => read(el, tag))])),
+        };
     };
 
     const enemies = $doc => {
@@ -277,7 +283,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const read = async () => {
         reading = true;
         $refresh.addClass('twk-spinning').prop('disabled', true);
-        const result = { version: VERSION, at: Date.now(), units: [], pop: {}, members: {}, hidden: [], tribes: {}, villages: {} };
+        const result = { version: VERSION, at: Date.now(), units: [], pop: {}, power: {}, members: {}, hidden: [], tribes: {}, villages: {} };
         let allowed = true;
         try {
             busy('Lendo os membros...');
@@ -286,7 +292,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             allowed = $options.length > 0;
             const members = $options.not('[disabled]').get().map(el => [el.value, $.trim(el.textContent)]);
             result.hidden = $options.filter('[disabled]').get().map(el => $.trim(el.textContent));
-            result.pop = await population();
+            Object.assign(result, await unitInfo());
             busy('Lendo os inimigos da diplomacia...');
             result.tribes = enemies(await TWK.doc(TWK.url(CONTRACTS)));
             const grid = await hostile(result.tribes);
@@ -327,9 +333,21 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const target = () => guards().reduce((total, u) => total + (settings.goal[u.unit] || 0) * weight(u.unit), 0);
 
+    const power = troops => {
+        const kinds = 'archer' in data.pop ? DEFENSES.length : DEFENSES.length - 1;
+        return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * (data.power[data.units[i]?.unit]?.[k] || 0), 0));
+    };
+
+    const strength = v => {
+        const need = power(data.units.map(u => settings.goal[u.unit] || 0));
+        const have = power(stock(v));
+        const shares = need.map((n, k) => have[k] / n).filter((_, k) => need[k] > 0);
+        return shares.length ? Math.min(...shares) : -1;
+    };
+
     const lacking = v => {
-        const have = stock(v);
-        return guards().map(u => Math.max(0, (settings.goal[u.unit] || 0) - have[u.i]));
+        const gap = Math.max(0, 1 - strength(v));
+        return guards().map(u => Math.ceil((settings.goal[u.unit] || 0) * gap));
     };
 
     const short = v => {
@@ -368,7 +386,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const tier = id => {
         const village = data.villages[id];
         const goal = target();
-        const ratio = village && goal ? pop(stock(village)) / goal : -1;
+        const ratio = village && goal ? strength(village) : -1;
         return TIERS.find(t => ratio >= t.min)?.color || BASE;
     };
 
