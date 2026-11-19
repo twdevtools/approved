@@ -30,6 +30,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const GAP = 10;
     const NARROW = 400;
     const ALL = '';
+    const BELOW = 'below';
     const SHIELD = TWK.svg('<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6Z"/>');
 
     const VERSION = 4;
@@ -46,6 +47,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const scales = {};
     let goalOpen = false;
     let marks = new Map();
+    let picking = false;
     let drawing = null;
     let chosen = new Set();
     let pivot = null;
@@ -62,6 +64,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         onClose: () => {
             reading = false;
             stop();
+            picking = false;
         },
         css: `
             #td-panel .twk-body { padding: 0; gap: 0; max-height: none; overflow: visible; }
@@ -121,7 +124,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #td-panel .td-front .td-after { right: 28px; }
             #td-panel .td-foe { width: 150px; }
             #td-panel .td-tier { width: 170px; }
-            #td-panel .td-zone-draw.td-active { border-color: #0a84ff; color: #0a84ff; }
+            #td-panel .td-zone-draw.td-active, #td-panel .td-mapmode.td-active { border-color: #0a84ff; color: #0a84ff; }
             #td-panel .td-hint { flex: none; padding: 8px 12px; border: 1px dashed var(--line-hi); border-radius: 8px; color: var(--muted); font-size: 11px; }
             #td-panel .td-tag { color: var(--muted); font-family: system-ui, sans-serif; }
             #td-panel .td-bar .td-tools { margin-left: auto; display: flex; gap: 6px; }
@@ -353,7 +356,14 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const scope = () => zone().filter(v => (view.member === ALL || v.player === view.member) && (view.foe === ALL || v.foe === view.foe));
 
-    const visible = () => scope().filter(v => !target() || view.tier === ALL || tier(v.id) === view.tier);
+    const below = v => tier(v.id) !== TIERS[0].color;
+
+    const ranked = v => {
+        if (view.tier === BELOW) return below(v);
+        return tier(v.id) === view.tier;
+    };
+
+    const visible = () => scope().filter(v => !target() || view.tier === ALL || ranked(v));
 
     const tier = id => {
         const village = data.villages[id];
@@ -384,7 +394,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             const count = list.filter(v => tier(v.id) === t.color).length;
             return `<option value="${t.color}"${view.tier === t.color ? ' selected' : ''}>${t.icon} ${range(i)} (${TWK.format(count)})</option>`;
         });
-        return `<option value="${ALL}">Todas as faixas</option>${options.join('')}`;
+        const under = list.filter(below).length;
+        return `<option value="${ALL}">Todas as faixas</option><option value="${BELOW}"${view.tier === BELOW ? ' selected' : ''}>Abaixo da meta (${TWK.format(under)})</option>${options.join('')}`;
     };
 
     const compact = n => {
@@ -541,6 +552,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         </select>
                         ${goal ? `<select class="td-tier">${tiers()}</select>` : ''}
                         <div class="td-tools">
+                            <button class="twk-btn td-tool td-mapmode${picking ? ' td-active' : ''}" data-tip="${picking ? 'Parar de selecionar no mapa' : 'Selecionar no mapa'}">${TWK.ICON.target}</button>
                             <button class="twk-btn td-tool td-zone-draw${area ? ' td-set' : ''}${drawing ? ' td-active' : ''}" data-tip="${area ? 'Limpar a área' : 'Desenhar área'}">${TWK.ICON.pen}</button>
                             <button class="twk-btn td-tool td-goalbtn${goal ? ' td-set' : ''}${goalOpen ? ' td-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
                             ${copier(counted !== list)}
@@ -675,6 +687,16 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         if (!data) return;
         TWMap.mapHandler.tdSpawn ??= TWMap.mapHandler.spawnSector;
         TWMap.minimapHandler.tdLoad ??= TWMap.minimapHandler.loadSector;
+        TWMap.mapHandler.tdClick ??= TWMap.mapHandler.onClick;
+        TWMap.mapHandler.onClick = function (x, y, event) {
+            const village = picking && marks.get(`${x}|${y}`);
+            if (!village) return TWMap.mapHandler.tdClick.call(this, x, y, event);
+            const on = !chosen.has(village.id);
+            if (on) chosen.add(village.id);
+            else chosen.delete(village.id);
+            refresh();
+            return false;
+        };
         TWMap.mapHandler.spawnSector = function (info, sector) {
             TWMap.mapHandler.tdSpawn.call(this, info, sector);
             mark(sector);
@@ -696,7 +718,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const select = (key, value) => {
         view[key] = value;
         if (key === 'member') chosen = new Set();
-        if (key !== 'tier') view.tier = ALL;
         update();
     };
 
@@ -708,7 +729,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const limit = area => {
         settings.area = area;
         save();
-        view.tier = ALL;
         update();
     };
 
@@ -854,6 +874,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         view.sort = reset ? null : { key, dir: same ? -first : first };
         render();
     });
+    $panel.on('click', '.td-mapmode', e => {
+        picking = !picking;
+        $(e.currentTarget).toggleClass('td-active', picking).attr('data-tip', picking ? 'Parar de selecionar no mapa' : 'Selecionar no mapa');
+    });
     $panel.on('click', '.td-zone-draw', () => {
         const clear = !drawing && !!settings.area;
         if (clear) return limit(null);
@@ -867,7 +891,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     $panel.on('change', '.td-front-input', e => {
         settings.reach = Math.min(LIMIT, Math.max(1, parseInt(e.currentTarget.value) || 1));
         save();
-        view.tier = ALL;
         update();
     });
     $panel.on('input', '.td-goal-input', e => {
@@ -878,10 +901,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         $panel.find('.td-goalbtn').toggleClass('td-set', !!target());
         restyle();
     });
-    $panel.on('change', '.td-goal-input', () => {
-        view.tier = ALL;
-        update();
-    });
+    $panel.on('change', '.td-goal-input', update);
     $panel.on('change', '.td-tier', e => select('tier', e.currentTarget.value));
     $panel.on('click', '.td-goalbtn', () => {
         goalOpen = !goalOpen;
