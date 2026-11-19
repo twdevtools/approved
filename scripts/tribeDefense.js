@@ -27,7 +27,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const CLOSE = 5;
     const NEIGHBORS = 5;
     const CELL = 10;
-    const RX_COORD = /\((\d+)\|(\d+)\)\s*K\d+\s*$/;
+    const RX_COORD = /\((\d+)\|(\d+)\)\s*\S*\s*$/;
     const FRAME = 986;
     const UNIT = 58;
     const GAP = 10;

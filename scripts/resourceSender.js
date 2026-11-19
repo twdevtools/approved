@@ -99,7 +99,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const parse = $doc => $doc.find(ROWS).get().map(el => {
         const $row = $(el).closest('tr');
         const label = $.trim($row.find('.quickedit-label').first().text());
-        const coord = label.match(/\((\d+)\|(\d+)\)\s*K\d+\s*$/) || [];
+        const coord = label.match(/\((\d+)\|(\d+)\)\s*\S*\s*$/) || [];
         const amount = type => +$row.find(`.res.${type}`).first().text().replace(/\D/g, '');
         const traders = +$row.find('a[href*="screen=market"]').first().text().split('/')[0] || 0;
         return { id: el.dataset.id, name: label, x: +coord[1], y: +coord[2], wood: amount('wood'), stone: amount('stone'), iron: amount('iron'), traders };

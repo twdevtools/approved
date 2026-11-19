@@ -5,7 +5,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const KEY = 'twRenameVillages';
     const LEGACY = 'set';
     const MAX = 32;
-    const RX = /\)\s*(K\d+)$/;
+    const RX = /\)\s*(\S+)$/;
     const TOKENS = [
         ['{num}', 'Número'],
         ['{k}', 'Continente'],
