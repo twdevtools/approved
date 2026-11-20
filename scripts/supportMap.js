@@ -17,6 +17,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const RX_COORD = /\((\d+)\|(\d+)\)\s*\S*\s*$/;
     const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 4, ram: 5, catapult: 8, knight: 10, snob: 100 };
     const WIDE = 1100;
+    const UNIT = 58;
+    const GAP = 12;
+    const FRAME = 250 + 32 + 42 + 2;
     const NARROW = 400;
     const GUARDS = ['spear', 'sword', 'archer', 'spy', 'heavy'];
     const DEFENSES = ['defense', 'defense_cavalry', 'defense_archer'];
@@ -90,8 +93,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #sm-panel .sm-player div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             #sm-panel .sm-player div small { color: var(--muted); font-size: 11px; }
             #sm-panel .sm-player > b { flex: none; min-width: 28px; padding: 1px 6px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; text-align: center; }
-            #sm-panel .sm-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-            #sm-panel .sm-head, #sm-panel .sm-row, #sm-panel .sm-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 12px; padding: 0 16px; }
+            #sm-panel .sm-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; overflow-y: hidden; }
+            #sm-panel .sm-head, #sm-panel .sm-row, #sm-panel .sm-foot { display: grid; grid-template-columns: var(--cols); align-items: center; gap: ${GAP}px; padding: 0 16px; }
+            #sm-panel .sm-head, #sm-panel .sm-body, #sm-panel .sm-foot { min-width: min-content; }
             #sm-panel .sm-head, #sm-panel .sm-foot { padding-right: 26px; }
             #sm-panel .sm-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
             #sm-panel .sm-head img { width: 18px; height: 18px; justify-self: end; }
@@ -398,7 +402,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const scroll = $content.find('.sm-players').scrollTop();
         const travelling = !!data.coming;
-        const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr))${travelling ? ' 96px' : ''} 96px 96px 28px`;
+        const fixed = [16, 68, 120, 96, 96, 28, ...(travelling ? [96] : [])];
+        const cols = `16px 68px minmax(120px, 1fr) repeat(${columns.length}, minmax(${UNIT}px, 1fr))${travelling ? ' 96px' : ''} 96px 96px 28px`;
+        $panel.css('width', FRAME + fixed.reduce((sum, n) => sum + n, 0) + columns.length * UNIT + (fixed.length + columns.length - 1) * GAP);
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
