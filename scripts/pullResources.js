@@ -94,7 +94,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const sources = async () => {
         const first = await TWK.doc(at(`${CALL}&page=0`));
-        const numbers = first.find('.paged-nav-item').get().map(a => +(a.getAttribute('href').match(/page=(\d+)/) || [])[1]).filter(n => !isNaN(n));
+        const numbers = first.find('.paged-nav-item').get().map(a => +((a.getAttribute('href') || '').match(/page=(\d+)/) || [])[1]).filter(n => !isNaN(n));
         const total = Math.max(0, ...numbers) + 1;
         const list = parse(first);
         for (let page = 1; page < total; page++) {
@@ -156,8 +156,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             if (empty) status('Nenhuma aldeia tem recursos e comerciantes livres');
             else show();
             $send.prop('disabled', empty);
-        } catch {
-            status('Não foi possível calcular');
+        } catch (error) {
+            console.error(error);
+            status(`Não foi possível calcular: ${TWK.escape(error?.message || error?.statusText || 'erro desconhecido')}`);
         } finally {
             $calc.prop('disabled', false);
         }
