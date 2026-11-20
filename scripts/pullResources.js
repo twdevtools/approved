@@ -4,6 +4,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const ROWS = '#village_list tr.supply_location';
     const RESOURCES = ['wood', 'stone', 'iron'];
     const BATCH = 1000;
+    const LOAD = 1000;
     const NARROW = 360;
     const WIDE = 520;
     const RX_COORD = /\((\d+)\|(\d+)\)\s*\S*\s*$/;
@@ -150,10 +151,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             plan = villages.map(v => {
                 const coins = Math.max(0, Math.min(v.capacity / bundle, ...RESOURCES.map(r => v[r] / cost[r])));
                 return { ...v, coins, send: Object.fromEntries(RESOURCES.map(r => [r, Math.floor(coins * cost[r])])) };
-            }).filter(p => RESOURCES.every(r => p.send[r]));
+            }).filter(p => RESOURCES.reduce((sum, r) => sum + p.send[r], 0) >= LOAD);
             $info.html(`<b>${TWK.escape(target.name)}</b> (${target.x}|${target.y}) · Moeda: <b>${RESOURCES.map(r => TWK.format(cost[r])).join(' / ')}</b>`);
             const empty = !plan.length;
-            if (empty) status('Nenhuma aldeia tem recursos e comerciantes livres');
+            if (empty) status('Nenhuma aldeia tem 1.000 recursos ou mais para enviar');
             else show();
             $send.prop('disabled', empty);
         } catch (error) {
