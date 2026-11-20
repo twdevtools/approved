@@ -438,7 +438,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const scroll = $content.find('.sm-players').scrollTop();
         const fixed = [16, 68, 120, 96, 96, 96, 28];
-        const units = columns.map(() => `minmax(${UNIT}px, 1fr)`).join(' ');
+        const units = columns.map(() => `${UNIT}px`).join(' ');
         const cols = `16px 68px minmax(120px, 1fr) ${units} 96px 96px 96px 28px`;
         $panel.css('width', Math.max(WIDE, FRAME + fixed.reduce((sum, n) => sum + n, 0) + columns.length * UNIT + (fixed.length + columns.length - 1) * GAP));
         $content.html(`
