@@ -21,7 +21,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         title: 'Enviar Recursos',
         sub: 'Envia das suas aldeias para uma coordenada',
         icon: CART,
-        width: 460,
+        width: 400,
         onClose: () => {
             sending = false;
         },
