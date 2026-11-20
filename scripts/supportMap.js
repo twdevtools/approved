@@ -3,24 +3,32 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     if (!page) return TWK.redirect('map', 'Redirecionando para o mapa...');
 
     const KEY = `twSupportMap_${game_data.world}`;
-    const GOAL_KEY = `twSupportMapGoal_${game_data.world}`;
+    const GOAL_KEY = `twSupportMapGoals_${game_data.world}`;
     const BASE = '#ffffff';
     const CHOSEN = '#0a84ff';
     const TIERS = [
-        { min: 1, color: '#30d158' },
-        { min: .5, color: '#ffd60a' },
-        { min: .25, color: '#ff9f0a' },
-        { min: 0, color: '#ff453a' },
+        { min: 1, color: '#30d158', icon: '🟢' },
+        { min: .5, color: '#ffd60a', icon: '🟡' },
+        { min: .25, color: '#ff9f0a', icon: '🟠' },
+        { min: 0, color: '#ff453a', icon: '🔴' },
     ];
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*\S*\s*$/;
     const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 4, ram: 5, catapult: 8, knight: 10, snob: 100 };
     const WIDE = 1100;
     const NARROW = 400;
+    const GUARDS = ['spear', 'sword', 'archer', 'spy', 'heavy'];
+    const DEFENSES = ['defense', 'defense_cavalry', 'defense_archer'];
+    const KINDS = ['Infantaria', 'Cavalaria', 'Arqueiro'];
+    const NAMES = { spear: 'lança', sword: 'espada', axe: 'machado', archer: 'arqueiro', spy: 'explorador', light: 'cavalaria leve', marcher: 'arqueiro a cavalo', heavy: 'cavalaria pesada', ram: 'aríete', catapult: 'catapulta', knight: 'paladino', snob: 'nobre' };
     const ALL = '';
     const NONE = '0';
+    const EXCESS = 'excess';
+    const BELOW = 'below';
+    const VERSION = 2;
 
-    let data = TWK.store.get(KEY);
+    const stored = TWK.store.get(KEY);
+    let data = stored?.version === VERSION ? stored : null;
     let reading = false;
 
     const $panel = TWK.panel({
@@ -51,23 +59,16 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #sm-panel .sm-reading .sm-stats, #sm-panel .sm-reading .sm-main { opacity: .45; pointer-events: none; }
             #sm-panel .sm-tool.sm-goalset { color: #30d158; }
             #sm-panel .sm-goalrow {
-                flex: none; padding: 8px 12px; display: flex; align-items: center; gap: 18px;
+                flex: none; padding: 8px 12px; display: flex; align-items: center;
                 background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
             }
             #sm-panel .sm-goalrow[hidden] { display: none; }
-            #sm-panel .sm-goalrow-field { flex: none; display: flex; align-items: center; gap: 8px; }
-            #sm-panel .sm-goalrow-field .twk-number { width: 120px; flex: none; }
-            #sm-panel .sm-tiers { flex: 1; min-width: 0; display: flex; gap: 8px; }
-            #sm-panel .sm-tier {
-                height: 26px; padding: 0 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;
-                background: none; border: 1px solid var(--line); border-radius: 13px; cursor: pointer;
-            }
-            #sm-panel .sm-tier:hover { border-color: var(--line-hi); background: var(--hover); }
-            #sm-panel .sm-tier.sm-active { border-color: var(--tier); background: var(--hover); }
-            #sm-panel .sm-tier i { width: 10px; height: 10px; flex: none; border-radius: 50%; border: 1px solid #000; }
-            #sm-panel .sm-tier span { color: var(--muted); }
-            #sm-panel .sm-tier b { font-weight: 600; }
-            #sm-panel .sm-tiers small { color: var(--muted); font-size: 11px; }
+            #sm-panel .sm-goals { flex: none; display: flex; align-items: center; gap: 10px; }
+            #sm-panel .sm-goal { position: relative; display: block; width: 110px; }
+            #sm-panel .sm-goal img { position: absolute; left: 9px; top: 50%; z-index: 1; width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none; }
+            #sm-panel .sm-goal input { padding-left: 32px; }
+            #sm-panel .sm-goalrow small { margin-left: auto; color: var(--muted); font-size: 11px; }
+            #sm-panel .sm-extra { color: #64d2ff; }
             #sm-panel .sm-row.sm-chosen { background: rgba(10, 132, 255, .1); }
             #sm-panel .sm-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
             #sm-panel .sm-stat { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); }
@@ -131,7 +132,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const $refresh = $panel.find('.sm-refresh');
     const view = { ally: ALL, player: ALL, tier: ALL };
     const pick = { off: new Set(), percent: 100 };
-    let goal = TWK.store.get(GOAL_KEY, 0);
+    const goal = TWK.store.get(GOAL_KEY, { spear: 30000, sword: 30000 });
     let goalOpen = false;
     const chosen = new Set();
     const scales = {};
@@ -181,15 +182,23 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         $content.find('.sm-progress b').css('width', `${ratio * 100}%`);
     };
 
+    const unitInfo = async () => {
+        const xml = await $.ajax({ url: '/interface.php?func=get_unit_info', dataType: 'xml' });
+        const list = $(xml).find('config').children().get();
+        const read = (el, tag) => +$(el).children(tag).text() || 0;
+        return Object.fromEntries(list.map(el => [el.tagName, DEFENSES.map(tag => read(el, tag))]));
+    };
+
     const read = async () => {
         reading = true;
         $refresh.toggleClass('twk-spinning', !!data).prop('disabled', true);
-        const result = { at: Date.now(), units: [], players: {}, allies: {}, villages: {} };
+        const result = { version: VERSION, at: Date.now(), units: [], power: {}, players: {}, allies: {}, villages: {} };
         try {
             busy('Lendo a página 1...');
             const first = await TWK.doc(TWK.url(`${PATH}&page=0`));
             const total = pageCount(first);
             result.units = units(first);
+            result.power = await unitInfo();
             collect(first, result);
             for (let page = 1; page < total && reading; page++) {
                 busy(`Lendo a página ${page + 1} de ${total}...`, page / total);
@@ -218,14 +227,74 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const scope = () => Object.entries(data.villages).map(([id, v]) => ({ ...v, id })).filter(v => inAlly(v) && (view.player === ALL || v.player === view.player));
 
-    const visible = () => scope().filter(v => !goal || view.tier === ALL || tier(v.id) === view.tier);
+    const guards = () => data.units.map((u, i) => ({ ...u, i })).filter(u => GUARDS.includes(u.unit));
+
+    const target = () => guards().reduce((total, u) => total + (goal[u.unit] || 0) * (POP[u.unit] || 0), 0);
+
+    const power = troops => {
+        const kinds = data.units.some(u => u.unit === 'archer') ? DEFENSES.length : DEFENSES.length - 1;
+        return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * (data.power[data.units[i].unit]?.[k] || 0), 0));
+    };
+
+    const required = () => power(data.units.map(u => goal[u.unit] || 0));
+
+    const shares = troops => {
+        const have = power(troops);
+        return required().map((n, k) => n ? have[k] / n : null);
+    };
+
+    const strength = troops => {
+        const list = shares(troops).filter(share => share !== null);
+        return list.length ? Math.min(...list) : -1;
+    };
+
+    const breakdown = v => shares(v.troops)
+        .map((share, k) => share === null ? '' : `${KINDS[k]} ${Math.floor(share * 100)}%`)
+        .filter(Boolean)
+        .join(' · ');
+
+    const spare = v => {
+        const need = required();
+        const have = power(v.troops);
+        const left = [...v.troops];
+        const taken = v.troops.map(() => 0);
+        const room = i => {
+            const unit = data.power[data.units[i].unit] || [];
+            const limits = need.map((n, k) => unit[k] ? Math.floor((have[k] - n) / unit[k]) : Infinity);
+            return Math.max(0, Math.min(left[i], ...limits));
+        };
+        data.units.forEach(() => {
+            const best = left.map((_, i) => ({ i, n: room(i) })).reduce((top, c) => c.n * (POP[data.units[c.i].unit] || 0) > top.n * (POP[data.units[top.i].unit] || 0) ? c : top);
+            if (!best.n) return;
+            left[best.i] -= best.n;
+            taken[best.i] += best.n;
+            have.forEach((_, k) => have[k] -= best.n * (data.power[data.units[best.i].unit]?.[k] || 0));
+        });
+        return taken;
+    };
+
+    const extra = v => target() ? pop(spare(v)) : 0;
+
+    const leftover = v => spare(v).map((n, i) => n ? `${TWK.format(n)} ${NAMES[data.units[i].unit] || data.units[i].unit}` : '').filter(Boolean).join(' · ');
+
+    const below = v => tier(v.id) !== TIERS[0].color;
+
+    const ranked = v => {
+        if (view.tier === EXCESS) return extra(v) > 0;
+        if (view.tier === BELOW) return below(v);
+        return tier(v.id) === view.tier;
+    };
+
+    const fits = v => !target() || view.tier === ALL || ranked(v);
+
+    const visible = () => scope().filter(fits);
 
     const shown = () => new Set([...visible().map(v => v.id), ...chosen]);
 
     const bounds = i => ({
-        low: TWK.format(Math.ceil(goal * TIERS[i].min)),
-        high: i ? TWK.format(Math.ceil(goal * TIERS[i - 1].min) - 1) : '',
-        next: i ? TWK.format(Math.ceil(goal * TIERS[i - 1].min)) : '',
+        low: TWK.format(Math.ceil(target() * TIERS[i].min)),
+        high: i ? TWK.format(Math.ceil(target() * TIERS[i - 1].min) - 1) : '',
+        next: i ? TWK.format(Math.ceil(target() * TIERS[i - 1].min)) : '',
     });
 
     const range = i => {
@@ -235,28 +304,23 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return `${b.low}–${b.high}`;
     };
 
-    const describe = (i, count) => {
-        const b = bounds(i);
-        const villages = TWK.plural(count, 'aldeia', 'aldeias');
-        if (!i) return `${villages} com ${b.low} ou mais de população`;
-        if (!TIERS[i].min) return `${villages} com menos de ${b.next} de população`;
-        return `${villages} com ${b.low} a ${b.high} de população`;
-    };
-
     const tiers = () => {
-        if (!goal) return '<small>Defina a população por aldeia para colorir o mapa.</small>';
         const list = scope();
-        return TIERS.map((t, i) => {
-            const count = list.filter(v => tier(v.id) === t.color).length;
-            return `<button class="sm-tier${view.tier === t.color ? ' sm-active' : ''}" style="--tier: ${t.color}" data-tier="${t.color}" data-tip="${describe(i, count)}">
-                <i style="background: ${t.color}"></i><span>${range(i)}</span><b class="twk-mono">${TWK.format(count)}</b>
-            </button>`;
-        }).join('');
+        const option = (value, label, count) => `<option value="${value}"${view.tier === value ? ' selected' : ''}>${label} (${TWK.format(count)})</option>`;
+        const colors = TIERS.map((t, i) => option(t.color, `${t.icon} ${range(i)}`, list.filter(v => tier(v.id) === t.color).length));
+        return [
+            `<option value="${ALL}">Todas as faixas</option>`,
+            option(BELOW, 'Abaixo da meta', list.filter(below).length),
+            option(EXCESS, 'Com sobra', list.filter(v => extra(v) > 0).length),
+            ...colors,
+        ].join('');
     };
 
     const stat = (label, value) => `<div class="sm-stat"><span>${label}</span><b class="twk-mono">${value}</b></div>`;
 
     const cell = n => `<span class="sm-num${n ? '' : ' sm-zero'}">${n ? TWK.format(n) : '–'}</span>`;
+
+    const goals = () => guards().map(u => `<label class="sm-goal" data-unit="${u.unit}" data-tip="${u.unit}"><img src="${u.src}" alt="${u.unit}">${TWK.number('sm-goal-input', { min: 0, step: 1000, value: goal[u.unit] || 0 })}</label>`).join('');
 
     const player = (id, name, sub, count) => `<button class="sm-player${id === view.player ? ' sm-active' : ''}" data-player="${id}">
         <div><span>${name}</span><small>${sub}</small></div><b>${count}</b>
@@ -270,17 +334,17 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             <button class="twk-btn twk-primary sm-start">${TWK.ICON.refresh}Ler apoios</button>
         `);
         const all = Object.values(data.villages);
-        const scoped = all.filter(inAlly);
+        const scoped = Object.entries(data.villages).map(([id, v]) => ({ ...v, id })).filter(v => inAlly(v) && fits(v));
         const list = visible().sort((a, b) => pop(b.troops) - pop(a.troops));
         const columns = data.units.map((u, i) => ({ ...u, i, total: list.reduce((total, v) => total + v.troops[i], 0) })).filter(u => u.total);
         const owners = Object.entries(data.players)
             .map(([id, name]) => ({ id, name, villages: scoped.filter(v => v.player === id) }))
-            .filter(p => p.villages.length)
+            .filter(p => p.villages.length || p.id === view.player)
             .sort((a, b) => b.villages.length - a.villages.length);
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const scroll = $content.find('.sm-players').scrollTop();
-        const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr)) 96px 28px`;
+        const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr)) 96px 96px 28px`;
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
@@ -297,6 +361,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                             ${allies.map(id => `<option value="${id}"${id === view.ally ? ' selected' : ''}>${tag(id)}</option>`).join('')}
                         </select>
                     </div>
+                    ${target() ? `<div class="twk-field">
+                        <span class="twk-label">Meta</span>
+                        <select class="sm-tier">${tiers()}</select>
+                    </div>` : ''}
                     <span class="twk-label">Jogadores</span>
                     <div class="sm-players">
                         ${player(ALL, 'Todos os jogadores', TWK.plural(owners.length, 'jogador', 'jogadores'), scoped.length)}
@@ -312,38 +380,36 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="sm-tools">
                             <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
-                            <button class="twk-btn sm-tool sm-goalbtn${goal ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" data-tip="Meta de população">${TWK.ICON.chart}</button>
+                            <button class="twk-btn sm-tool sm-goalbtn${target() ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
                             <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
                         </div>
                     </div>
                     <div class="sm-goalrow"${goalOpen ? '' : ' hidden'}>
-                        <div class="sm-goalrow-field">
-                            <span class="twk-label">Meta</span>
-                            ${TWK.number('sm-goal-input', { min: 0, step: 1000, value: goal })}
-                        </div>
-                        <div class="sm-tiers">${tiers()}</div>
+                        <div class="sm-goals">${goals()}</div>
+                        <small>Meta: <b class="sm-target twk-mono">${TWK.format(target())}</b> de população</small>
                     </div>
                     <div class="sm-table" style="--cols: ${cols}">
                         <div class="sm-head">
                             <input type="checkbox" class="sm-check sm-check-all"${list.length && list.every(v => chosen.has(v.id)) ? ' checked' : ''}>
                             <span>Aldeia</span><span>Jogador</span>
                             ${columns.map(u => `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`).join('')}
-                            <span class="sm-num">População</span><span></span>
+                            <span class="sm-num">População</span><span class="sm-num" data-tip="Tropa além da meta que dá para tirar">Sobra</span><span></span>
                         </div>
                         <div class="sm-body">
                             ${list.map(v => `<div class="sm-row${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
                                 <input type="checkbox" class="sm-check"${chosen.has(v.id) ? ' checked' : ''}>
-                                <b class="twk-mono">${v.x}|${v.y}</b>
+                                <b class="twk-mono"${target() ? ` data-tip="${breakdown(v)}"` : ''}>${v.x}|${v.y}</b>
                                 <span class="sm-owner">${TWK.escape(data.players[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.troops[u.i])).join('')}
                                 <span class="sm-num sm-pop">${TWK.format(pop(v.troops))}</span>
+                                ${extra(v) ? `<span class="sm-num sm-extra" data-tip="${leftover(v)}">${TWK.format(extra(v))}</span>` : cell(0)}
                                 <button class="sm-del" data-tip="Remover apoio">${TWK.ICON.close}</button>
                             </div>`).join('')}
                         </div>
                         <div class="sm-foot">
                             <span></span><span>Total</span><span></span>
                             ${columns.map(u => cell(u.total)).join('')}
-                            <span class="sm-num sm-pop">${TWK.format(total)}</span><span></span>
+                            <span class="sm-num sm-pop">${TWK.format(total)}</span>${cell(list.reduce((sum, v) => sum + extra(v), 0))}<span></span>
                         </div>
                     </div>
                 </section>
@@ -354,7 +420,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const tier = id => {
         const village = data.villages[id];
-        const ratio = village && goal ? pop(village.troops) / goal : -1;
+        const ratio = village && target() ? strength(village.troops) : -1;
         return TIERS.find(t => ratio >= t.min)?.color || BASE;
     };
 
@@ -431,7 +497,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const select = (key, value) => {
         view[key] = value;
         if (key === 'ally') view.player = ALL;
-        if (key !== 'tier') view.tier = ALL;
         render();
         TWMap.reload();
     };
@@ -530,22 +595,18 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         $(e.currentTarget).toggleClass('sm-on', !off);
     });
     $panel.on('input', '.sm-goal-input', e => {
-        goal = Math.max(0, parseInt(e.currentTarget.value) || 0);
+        goal[$(e.currentTarget).closest('.sm-goal').data('unit')] = Math.max(0, parseInt(e.currentTarget.value) || 0);
         TWK.store.set(GOAL_KEY, goal);
-        $panel.find('.sm-tiers').html(tiers());
-        $panel.find('.sm-goalbtn').toggleClass('sm-goalset', !!goal);
+        $panel.find('.sm-target').text(TWK.format(target()));
+        $panel.find('.sm-tier').html(tiers());
+        $panel.find('.sm-goalbtn').toggleClass('sm-goalset', !!target());
         restyle();
     });
     $panel.on('change', '.sm-goal-input', () => {
-        const filtered = view.tier !== ALL;
-        if (!filtered) return;
         render();
         TWMap.reload();
     });
-    $panel.on('click', '.sm-tier', e => {
-        const color = $(e.currentTarget).data('tier');
-        select('tier', view.tier === color ? ALL : color);
-    });
+    $panel.on('change', '.sm-tier', e => select('tier', e.currentTarget.value));
     $panel.on('click', '.sm-goalbtn', () => {
         goalOpen = !goalOpen;
         $panel.find('.sm-goalrow').prop('hidden', !goalOpen);
