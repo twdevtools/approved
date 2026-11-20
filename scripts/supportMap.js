@@ -30,6 +30,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const NONE = '0';
     const EXCESS = 'excess';
     const BELOW = 'below';
+    const PERCENTS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
     const VERSION = 2;
 
     const stored = TWK.store.get(KEY);
@@ -105,8 +106,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #sm-panel .sm-sort:hover, #sm-panel .sm-sorted { color: var(--text); }
             #sm-panel .sm-sort svg { width: 11px; height: 11px; flex: none; opacity: .6; }
             #sm-panel .sm-sorted svg { opacity: 1; color: var(--accent); }
-            #sm-panel .sm-only.sm-active { border-color: #64d2ff; color: #64d2ff; }
-            #sm-panel .sm-pick.sm-sparing .sm-toggle, #sm-panel .sm-pick.sm-sparing .sm-percent { opacity: .2; pointer-events: none; }
+            #sm-panel .sm-pick.sm-sparing .sm-toggle { opacity: .2; pointer-events: none; }
             #sm-panel .sm-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
             #sm-panel .sm-row { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; }
             #sm-panel .sm-row:last-child { border-bottom: 0; }
@@ -129,7 +129,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             }
             #sm-panel .sm-toggle img { width: 18px; height: 18px; }
             #sm-panel .sm-toggle.sm-on { opacity: 1; border-color: var(--accent); }
-            #sm-panel .sm-percent { width: 96px; margin-left: 8px; }
+            #sm-panel .sm-amount { width: 130px; margin-left: 4px; }
             #sm-panel .sm-remove { border-color: var(--accent); color: #f08a8a; }
             #sm-panel .sm-remove:hover { background: var(--accent); color: #fff; }
             #sm-panel .sm-del {
@@ -469,9 +469,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                     <div class="sm-pick${pick.spare ? ' sm-sparing' : ''}">
                         <span class="twk-caption">Retirar</span>
                         ${columns.map(u => `<button class="sm-toggle${pick.off.has(u.unit) ? '' : ' sm-on'}" data-unit="${u.unit}" data-tip="${u.unit}"><img src="${u.src}" alt="${u.unit}"></button>`).join('')}
-                        <div class="sm-percent">${TWK.number('sm-amount', { min: 10, max: 100, step: 10, value: pick.percent })}</div>
-                        <span class="twk-caption">%</span>
-                        ${target() ? `<button class="twk-btn sm-only${pick.spare ? ' sm-active' : ''}" data-tip="Retirar só o que passa da meta">Só a sobra</button>` : ''}
+                        <select class="sm-amount">
+                            ${PERCENTS.map(n => `<option value="${n}"${!pick.spare && n === pick.percent ? ' selected' : ''}>${n}%</option>`).join('')}
+                            ${target() ? `<option value="${EXCESS}"${pick.spare ? ' selected' : ''}>Só a sobra</option>` : ''}
+                        </select>
                         <div class="sm-tools">
                             <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
@@ -499,12 +500,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                                 ${cell(pop(arriving(v)))}
                                 <span class="sm-num sm-pop">${TWK.format(pop(v.troops))}</span>
                                 ${surplus(v) ? `<span class="sm-num sm-extra" data-tip="${leftover(v)}">${TWK.format(spareShown(v))}</span>` : cell(0)}
-                                <button class="sm-del" data-tip="Remover apoio">${TWK.ICON.close}</button>
+                                <button class="sm-del" data-tip="${retreat()}">${TWK.ICON.clear}</button>
                             </div>`).join('')}
                         </div>
                         <div class="sm-foot">
                             <span></span><span>Total</span><span></span>
-                            ${columns.map(u => cell(u.total)).join('')}
+                            ${columns.map(u => `<span class="sm-num${u.total ? '' : ' sm-zero'}" data-tip="${TWK.format(u.total)}">${short(u.total)}</span>`).join('')}
                             ${cell(list.reduce((sum, v) => sum + pop(arriving(v)), 0))}<span class="sm-num sm-pop">${TWK.format(total)}</span>${cell(list.reduce((sum, v) => sum + extra(v), 0))}<span></span>
                         </div>
                     </div>
@@ -597,6 +598,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         TWMap.reload();
     };
 
+    const retreat = () => pick.spare && target() ? 'Retirar a sobra desta aldeia' : `Retirar ${pick.percent}% desta aldeia`;
+
     const removal = () => `${TWK.ICON.clear}${chosen.size ? `Retirar das selecionadas (${chosen.size})` : 'Selecione aldeias'}`;
 
     const refresh = () => {
@@ -671,11 +674,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     $panel.on('click', '.sm-player', e => select('player', String($(e.currentTarget).data('player'))));
     $panel.on('click', '.sm-row', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
-    $panel.on('click', '.sm-only', e => {
-        pick.spare = !pick.spare;
-        $(e.currentTarget).toggleClass('sm-active', pick.spare);
-        $panel.find('.sm-pick').toggleClass('sm-sparing', pick.spare);
-    });
     $panel.on('click', '.sm-sort', e => {
         const key = $(e.currentTarget).data('sort');
         const first = ASCENDING.includes(key) ? 1 : -1;
@@ -727,8 +725,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         $panel.find('.sm-goalrow').prop('hidden', !goalOpen);
         $panel.find('.sm-goalbtn').toggleClass('sm-active', goalOpen);
     });
-    $panel.on('input', '.sm-amount', e => {
-        pick.percent = Math.min(100, Math.max(10, parseInt(e.currentTarget.value) || 100));
+    $panel.on('change', '.sm-amount', e => {
+        const value = e.currentTarget.value;
+        pick.spare = value === EXCESS;
+        if (!pick.spare) pick.percent = +value;
+        $panel.find('.sm-pick').toggleClass('sm-sparing', pick.spare);
+        $panel.find('.sm-del').attr('data-tip', retreat());
     });
     $panel.on('click', '.sm-del', e => {
         e.stopPropagation();
