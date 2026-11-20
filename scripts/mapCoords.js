@@ -3,7 +3,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     if (!page) return TWK.redirect('map', 'Redirecionando para o mapa...');
 
     const KEY = `twMapCoords_${game_data.world}`;
-    const COLOR = '#ffffff';
+    const COLOR = '#0a84ff';
     const SEPARATORS = { line: '\n', space: ' ', comma: ',' };
 
     const picked = TWK.store.get(KEY, []);
@@ -69,7 +69,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const span = sector._map.sectorSize;
         const [width, height] = sector._map.scale;
         const mini = sector._map === TWMap.minimap;
-        const look = mini ? { background: COLOR, zIndex: 10 } : { border: `3px solid ${COLOR}`, outline: '1px solid #000', background: `${COLOR}73`, zIndex: 5 };
+        const look = mini ? { border: '1px solid #000', background: COLOR, zIndex: 10 } : { border: `3px solid ${COLOR}`, outline: '1px solid #000', background: `${COLOR}73`, zIndex: 5 };
         picked.map(coord => coord.split('|').map(Number))
             .filter(([x, y]) => x >= sector.x && x < sector.x + span && y >= sector.y && y < sector.y + span)
             .forEach(([x, y]) => {
