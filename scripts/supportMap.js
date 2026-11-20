@@ -205,7 +205,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const read = async () => {
         reading = true;
         $refresh.toggleClass('twk-spinning', !!data).prop('disabled', true);
-        const result = { version: VERSION, at: Date.now(), units: [], power: {}, players: {}, allies: {}, villages: {} };
+        const result = { version: VERSION, at: Date.now(), units: [], power: {}, players: {}, allies: {}, villages: {}, coming: {} };
         try {
             busy('Lendo a página 1...');
             const first = await TWK.doc(TWK.url(`${PATH}&page=0`));
@@ -217,6 +217,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                 busy(`Lendo a página ${page + 1} de ${total}...`, page / total);
                 collect(await TWK.doc(TWK.url(`${PATH}&page=${page}`)), result);
             }
+            if (reading) await travel(result);
         } catch {
             reading = false;
             UI.ErrorMessage('Não foi possível ler os apoios');
@@ -232,7 +233,19 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         render();
     };
 
-    const transit = ($doc, index, coming) => {
+    const travel = async result => {
+        const index = new Map(Object.entries(result.villages).map(([id, v]) => [`${v.x}|${v.y}`, id]));
+        busy('Lendo os apoios a caminho...');
+        const first = await TWK.doc(TWK.url(`${COMMANDS}&page=0`));
+        const total = pageCount(first);
+        transit(first, index, result);
+        for (let page = 1; page < total && reading; page++) {
+            busy(`Lendo os apoios a caminho, página ${page + 1} de ${total}...`, page / total);
+            transit(await TWK.doc(TWK.url(`${COMMANDS}&page=${page}`)), index, result);
+        }
+    };
+
+    const transit = ($doc, index, result) => {
         const order = $doc.find('#commands_table th img[src*="/unit/unit_"]').get().map(img => img.getAttribute('src').match(/unit_(\w+)\./)[1]);
         $doc.find('#commands_table .own_command[data-command-type="support"]').each((_, el) => {
             const $row = $(el).closest('tr');
@@ -240,41 +253,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             const id = coord && index.get(`${coord[1]}|${coord[2]}`);
             if (!id) return;
             const counts = $row.find('td.unit-item').get().map(td => +td.textContent || 0);
-            const troops = coming[id] ??= data.units.map(() => 0);
+            const troops = result.coming[id] ??= result.units.map(() => 0);
             order.forEach((unit, k) => {
-                const i = data.units.findIndex(u => u.unit === unit);
+                const i = result.units.findIndex(u => u.unit === unit);
                 if (i >= 0) troops[i] += counts[k] || 0;
             });
         });
-    };
-
-    const travel = async () => {
-        reading = true;
-        $panel.find('.sm-coming, .sm-refresh').prop('disabled', true);
-        const index = new Map(Object.entries(data.villages).map(([id, v]) => [`${v.x}|${v.y}`, id]));
-        const coming = {};
-        try {
-            busy('Lendo os apoios a caminho...');
-            const first = await TWK.doc(TWK.url(`${COMMANDS}&page=0`));
-            const total = pageCount(first);
-            transit(first, index, coming);
-            for (let page = 1; page < total && reading; page++) {
-                busy(`Lendo os apoios a caminho, página ${page + 1} de ${total}...`, page / total);
-                transit(await TWK.doc(TWK.url(`${COMMANDS}&page=${page}`)), index, coming);
-            }
-        } catch {
-            reading = false;
-            UI.ErrorMessage('Não foi possível ler os apoios a caminho');
-        }
-        const finished = reading;
-        reading = false;
-        $refresh.prop('disabled', false);
-        if (finished) {
-            data.coming = coming;
-            TWK.store.set(KEY, data);
-        }
-        render();
-        TWMap.reload();
     };
 
     const pop = troops => troops.reduce((total, n, i) => total + n * (POP[data.units[i].unit] || 0), 0);
@@ -452,9 +436,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const scroll = $content.find('.sm-players').scrollTop();
-        const travelling = !!data.coming;
-        const fixed = [16, 68, 120, 96, 96, 28, ...(travelling ? [96] : [])];
-        const cols = `16px 68px minmax(120px, 1fr) repeat(${columns.length}, minmax(${UNIT}px, 1fr))${travelling ? ' 96px' : ''} 96px 96px 28px`;
+        const fixed = [16, 68, 120, 96, 96, 96, 28];
+        const cols = `16px 68px minmax(120px, 1fr) repeat(${columns.length}, minmax(${UNIT}px, 1fr)) 96px 96px 96px 28px`;
         $panel.css('width', FRAME + fixed.reduce((sum, n) => sum + n, 0) + columns.length * UNIT + (fixed.length + columns.length - 1) * GAP);
         $content.html(`
             <div class="sm-stats">
@@ -492,7 +475,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="sm-tools">
                             <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
-                            <button class="twk-btn sm-tool sm-coming${travelling ? ' sm-goalset' : ''}" data-tip="${travelling ? 'Atualizar os apoios a caminho' : 'Somar os apoios a caminho'}">${TWK.ICON.plus}</button>
                             <button class="twk-btn sm-tool sm-goalbtn${target() ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
                             <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
                         </div>
@@ -506,7 +488,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                             <input type="checkbox" class="sm-check sm-check-all"${list.length && list.every(v => chosen.has(v.id)) ? ' checked' : ''}>
                             <span>Aldeia</span>${header('player', 'Jogador')}
                             ${columns.map(u => header(`unit:${u.i}`, `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`, ' sm-end')).join('')}
-                            ${travelling ? header('coming', 'A caminho', ' sm-end') : ''}${header('pop', 'População', ' sm-end')}${header('extra', '<span data-tip="Tropa além da meta que dá para tirar">Sobra</span>', ' sm-end')}<span></span>
+                            ${header('coming', 'A caminho', ' sm-end')}${header('pop', 'População', ' sm-end')}${header('extra', '<span data-tip="Tropa além da meta que dá para tirar">Sobra</span>', ' sm-end')}<span></span>
                         </div>
                         <div class="sm-body">
                             ${list.map(v => `<div class="sm-row${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
@@ -514,7 +496,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                                 <b class="twk-mono"${target() ? ` data-tip="${breakdown(v)}"` : ''}>${v.x}|${v.y}</b>
                                 <span class="sm-owner">${TWK.escape(data.players[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.troops[u.i])).join('')}
-                                ${travelling ? cell(pop(arriving(v))) : ''}
+                                ${cell(pop(arriving(v)))}
                                 <span class="sm-num sm-pop">${TWK.format(pop(v.troops))}</span>
                                 ${surplus(v) ? `<span class="sm-num sm-extra" data-tip="${leftover(v)}">${TWK.format(spareShown(v))}</span>` : cell(0)}
                                 <button class="sm-del" data-tip="Remover apoio">${TWK.ICON.close}</button>
@@ -523,7 +505,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="sm-foot">
                             <span></span><span>Total</span><span></span>
                             ${columns.map(u => cell(u.total)).join('')}
-                            ${travelling ? cell(list.reduce((sum, v) => sum + pop(arriving(v)), 0)) : ''}<span class="sm-num sm-pop">${TWK.format(total)}</span>${cell(list.reduce((sum, v) => sum + extra(v), 0))}<span></span>
+                            ${cell(list.reduce((sum, v) => sum + pop(arriving(v)), 0))}<span class="sm-num sm-pop">${TWK.format(total)}</span>${cell(list.reduce((sum, v) => sum + extra(v), 0))}<span></span>
                         </div>
                     </div>
                 </section>
@@ -689,7 +671,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     $panel.on('click', '.sm-player', e => select('player', String($(e.currentTarget).data('player'))));
     $panel.on('click', '.sm-row', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
-    $panel.on('click', '.sm-coming', travel);
     $panel.on('click', '.sm-only', e => {
         pick.spare = !pick.spare;
         $(e.currentTarget).toggleClass('sm-active', pick.spare);
