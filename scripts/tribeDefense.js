@@ -18,7 +18,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const BUILDINGS = 'ally&mode=members_buildings';
     const CONTRACTS = 'ally&mode=contracts';
     const GUARDS = ['spear', 'sword', 'archer', 'spy', 'heavy'];
-    const WEIGHT = { heavy: 4 };
+    const WEIGHT = { heavy: 4, spy: 0 };
+    const SCOUT = 'spy';
     const DEFENSES = ['defense', 'defense_cavalry', 'defense_archer'];
     const KINDS = ['Infantaria', 'Cavalaria', 'Arqueiro'];
     const STALE = 60 * 60 * 1000;
@@ -340,17 +341,25 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const target = () => guards().reduce((total, u) => total + (settings.goal[u.unit] || 0) * weight(u.unit), 0);
 
+    const armor = (unit, k) => unit === SCOUT ? 0 : data.power[unit]?.[k] || 0;
+
     const power = troops => {
         const kinds = 'archer' in data.pop ? DEFENSES.length : DEFENSES.length - 1;
-        return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * (data.power[data.units[i]?.unit]?.[k] || 0), 0));
+        return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * armor(data.units[i]?.unit, k), 0));
     };
 
     const required = () => power(data.units.map(u => settings.goal[u.unit] || 0));
 
+    const spies = troops => troops[data.units.findIndex(u => u.unit === SCOUT)] || 0;
+
     const shares = v => {
-        const have = power(stock(v));
-        return required().map((n, k) => n ? have[k] / n : null);
+        const troops = stock(v);
+        const have = power(troops);
+        const wanted = settings.goal[SCOUT] || 0;
+        return [...required().map((n, k) => n ? have[k] / n : null), wanted ? spies(troops) / wanted : null];
     };
+
+    const labels = () => [...KINDS.slice(0, required().length), 'Explorador'];
 
     const strength = v => {
         const list = shares(v).filter(share => share !== null);
@@ -358,7 +367,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     };
 
     const breakdown = v => shares(v)
-        .map((share, k) => share === null ? '' : `${KINDS[k]} ${Math.floor(share * 100)}%`)
+        .map((share, k) => share === null ? '' : `${labels()[k]} ${Math.floor(share * 100)}%`)
         .filter(Boolean)
         .join(' · ');
 
@@ -366,18 +375,20 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const need = required();
         const have = power(stock(v));
         const send = guards().map(() => 0);
-        const options = guards().map((u, k) => ({ ...u, k })).filter(u => settings.goal[u.unit] > 0);
+        const options = guards().map((u, k) => ({ ...u, k })).filter(u => settings.goal[u.unit] > 0 && u.unit !== SCOUT);
+        const scout = guards().findIndex(u => u.unit === SCOUT);
+        if (scout >= 0) send[scout] = Math.max(0, (settings.goal[SCOUT] || 0) - spies(stock(v)));
         need.forEach(() => {
             const weakest = need.map((n, d) => ({ d, share: n ? have[d] / n : Infinity })).sort((a, b) => a.share - b.share)[0];
             const covered = !options.length || weakest.share >= 1;
             if (covered) return;
-            const value = u => (data.power[u.unit]?.[weakest.d] || 0) / (data.pop[u.unit] || 1);
+            const value = u => armor(u.unit, weakest.d) / (data.pop[u.unit] || 1);
             const best = options.reduce((top, u) => value(u) > value(top) ? u : top);
-            const each = data.power[best.unit]?.[weakest.d] || 0;
+            const each = armor(best.unit, weakest.d);
             if (!each) return;
             const count = Math.ceil((need[weakest.d] - have[weakest.d]) / each);
             send[best.k] += count;
-            have.forEach((_, d) => have[d] += count * (data.power[best.unit]?.[d] || 0));
+            have.forEach((_, d) => have[d] += count * armor(best.unit, d));
         });
         return send;
     };

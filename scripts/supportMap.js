@@ -15,13 +15,14 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
     const COMMANDS = 'overview_villages&mode=commands&type=support&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*\S*\s*$/;
-    const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 4, ram: 5, catapult: 8, knight: 10, snob: 100 };
+    const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 0, light: 4, marcher: 5, heavy: 4, ram: 5, catapult: 8, knight: 10, snob: 100 };
     const WIDE = 1100;
     const UNIT = 58;
     const GAP = 12;
     const FRAME = 250 + 32 + 42 + 2;
     const NARROW = 400;
     const GUARDS = ['spear', 'sword', 'archer', 'spy', 'heavy'];
+    const SCOUT = 'spy';
     const DEFENSES = ['defense', 'defense_cavalry', 'defense_archer'];
     const KINDS = ['Infantaria', 'Cavalaria', 'Arqueiro'];
     const NAMES = { spear: 'lança', sword: 'espada', axe: 'machado', archer: 'arqueiro', spy: 'explorador', light: 'cavalaria leve', marcher: 'arqueiro a cavalo', heavy: 'cavalaria pesada', ram: 'aríete', catapult: 'catapulta', knight: 'paladino', snob: 'nobre' };
@@ -98,7 +99,14 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #sm-panel .sm-head, #sm-panel .sm-body, #sm-panel .sm-foot { min-width: min-content; }
             #sm-panel .sm-head, #sm-panel .sm-foot { padding-right: 26px; }
             #sm-panel .sm-head { height: 38px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-            #sm-panel .sm-head img { width: 18px; height: 18px; justify-self: end; }
+            #sm-panel .sm-head img { width: 18px; height: 18px; }
+            #sm-panel .sm-sort { display: flex; align-items: center; gap: 5px; min-width: 0; white-space: nowrap; cursor: pointer; user-select: none; }
+            #sm-panel .sm-sort.sm-end { justify-content: flex-end; }
+            #sm-panel .sm-sort:hover, #sm-panel .sm-sorted { color: var(--text); }
+            #sm-panel .sm-sort svg { width: 11px; height: 11px; flex: none; opacity: .6; }
+            #sm-panel .sm-sorted svg { opacity: 1; color: var(--accent); }
+            #sm-panel .sm-only.sm-active { border-color: #64d2ff; color: #64d2ff; }
+            #sm-panel .sm-pick.sm-sparing .sm-toggle, #sm-panel .sm-pick.sm-sparing .sm-percent { opacity: .2; pointer-events: none; }
             #sm-panel .sm-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
             #sm-panel .sm-row { height: 40px; border-bottom: 1px solid var(--line); cursor: pointer; }
             #sm-panel .sm-row:last-child { border-bottom: 0; }
@@ -135,8 +143,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const $content = $panel.find('.sm-content');
     const $refresh = $panel.find('.sm-refresh');
-    const view = { ally: ALL, player: ALL, tier: ALL };
-    const pick = { off: new Set(), percent: 100 };
+    const view = { ally: ALL, player: ALL, tier: ALL, sort: null };
+    const pick = { off: new Set(), percent: 100, spare: false };
     const goal = TWK.store.get(GOAL_KEY, { spear: 30000, sword: 30000 });
     let goalOpen = false;
     const chosen = new Set();
@@ -288,17 +296,24 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const target = () => guards().reduce((total, u) => total + (goal[u.unit] || 0) * (POP[u.unit] || 0), 0);
 
+    const armor = (unit, k) => unit === SCOUT ? 0 : data.power[unit]?.[k] || 0;
+
     const power = troops => {
         const kinds = data.units.some(u => u.unit === 'archer') ? DEFENSES.length : DEFENSES.length - 1;
-        return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * (data.power[data.units[i].unit]?.[k] || 0), 0));
+        return DEFENSES.slice(0, kinds).map((_, k) => troops.reduce((total, n, i) => total + n * armor(data.units[i].unit, k), 0));
     };
 
     const required = () => power(data.units.map(u => goal[u.unit] || 0));
 
+    const spies = troops => troops[data.units.findIndex(u => u.unit === SCOUT)] || 0;
+
     const shares = troops => {
         const have = power(troops);
-        return required().map((n, k) => n ? have[k] / n : null);
+        const wanted = goal[SCOUT] || 0;
+        return [...required().map((n, k) => n ? have[k] / n : null), wanted ? spies(troops) / wanted : null];
     };
+
+    const labels = () => [...KINDS.slice(0, required().length), 'Explorador'];
 
     const strength = troops => {
         const list = shares(troops).filter(share => share !== null);
@@ -306,7 +321,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     };
 
     const breakdown = v => shares(stock(v))
-        .map((share, k) => share === null ? '' : `${KINDS[k]} ${Math.floor(share * 100)}%`)
+        .map((share, k) => share === null ? '' : `${labels()[k]} ${Math.floor(share * 100)}%`)
         .filter(Boolean)
         .join(' · ');
 
@@ -316,8 +331,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const left = [...v.troops];
         const taken = v.troops.map(() => 0);
         const room = i => {
-            const unit = data.power[data.units[i].unit] || [];
-            const limits = need.map((n, k) => unit[k] ? Math.floor((have[k] - n) / unit[k]) : Infinity);
+            const unit = data.units[i].unit;
+            const limits = need.map((n, k) => armor(unit, k) ? Math.floor((have[k] - n) / armor(unit, k)) : Infinity);
             return Math.max(0, Math.min(left[i], ...limits));
         };
         data.units.forEach(() => {
@@ -325,19 +340,26 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             if (!best.n) return;
             left[best.i] -= best.n;
             taken[best.i] += best.n;
-            have.forEach((_, k) => have[k] -= best.n * (data.power[data.units[best.i].unit]?.[k] || 0));
+            have.forEach((_, k) => have[k] -= best.n * armor(data.units[best.i].unit, k));
         });
+        const scout = data.units.findIndex(u => u.unit === SCOUT);
+        const wanted = goal[SCOUT] || 0;
+        if (scout >= 0 && wanted) taken[scout] = Math.max(0, Math.min(left[scout], spies(stock(v)) - wanted));
         return taken;
     };
 
     const extra = v => target() ? pop(spare(v)) : 0;
+
+    const surplus = v => !!target() && spare(v).some(Boolean);
+
+    const spareShown = v => extra(v) || spies(spare(v));
 
     const leftover = v => spare(v).map((n, i) => n ? `${TWK.format(n)} ${NAMES[data.units[i].unit] || data.units[i].unit}` : '').filter(Boolean).join(' · ');
 
     const below = v => tier(v.id) !== TIERS[0].color;
 
     const ranked = v => {
-        if (view.tier === EXCESS) return extra(v) > 0;
+        if (view.tier === EXCESS) return surplus(v);
         if (view.tier === BELOW) return below(v);
         return tier(v.id) === view.tier;
     };
@@ -368,9 +390,38 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return [
             `<option value="${ALL}">Todas as faixas</option>`,
             option(BELOW, 'Abaixo da meta', list.filter(below).length),
-            option(EXCESS, 'Com sobra', list.filter(v => extra(v) > 0).length),
+            option(EXCESS, 'Com sobra', list.filter(surplus).length),
             ...colors,
         ].join('');
+    };
+
+    const SORTS = {
+        player: v => data.players[v.player] || '',
+        coming: v => pop(arriving(v)),
+        pop: v => pop(v.troops),
+        extra: v => extra(v),
+    };
+
+    const ASCENDING = ['player'];
+
+    const sorter = () => {
+        const sort = view.sort;
+        const fallback = (a, b) => pop(b.troops) - pop(a.troops);
+        if (!sort) return fallback;
+        const unit = sort.key.startsWith('unit:');
+        const value = unit ? v => v.troops[+sort.key.slice(5)] : SORTS[sort.key];
+        return (a, b) => {
+            const x = value(a);
+            const y = value(b);
+            const order = typeof x === 'string' ? x.localeCompare(y) : x - y;
+            return sort.dir * order || fallback(a, b);
+        };
+    };
+
+    const header = (key, content, extra = '') => {
+        const active = view.sort?.key === key;
+        const arrow = active && view.sort.dir > 0 ? TWK.ICON.up : TWK.ICON.down;
+        return `<span class="sm-sort${active ? ' sm-sorted' : ''}${extra}" data-sort="${key}">${content}${arrow}</span>`;
     };
 
     const stat = (label, value) => `<div class="sm-stat"><span>${label}</span><b class="twk-mono">${value}</b></div>`;
@@ -392,7 +443,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         `);
         const all = Object.values(data.villages);
         const scoped = Object.entries(data.villages).map(([id, v]) => ({ ...v, id })).filter(v => inAlly(v) && fits(v));
-        const list = visible().sort((a, b) => pop(b.troops) - pop(a.troops));
+        const list = visible().sort(sorter());
         const columns = data.units.map((u, i) => ({ ...u, i, total: list.reduce((total, v) => total + v.troops[i], 0) })).filter(u => u.total);
         const owners = Object.entries(data.players)
             .map(([id, name]) => ({ id, name, villages: scoped.filter(v => v.player === id) }))
@@ -432,11 +483,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                     </div>
                 </aside>
                 <section class="sm-area">
-                    <div class="sm-pick">
+                    <div class="sm-pick${pick.spare ? ' sm-sparing' : ''}">
                         <span class="twk-caption">Retirar</span>
                         ${columns.map(u => `<button class="sm-toggle${pick.off.has(u.unit) ? '' : ' sm-on'}" data-unit="${u.unit}" data-tip="${u.unit}"><img src="${u.src}" alt="${u.unit}"></button>`).join('')}
                         <div class="sm-percent">${TWK.number('sm-amount', { min: 10, max: 100, step: 10, value: pick.percent })}</div>
                         <span class="twk-caption">%</span>
+                        ${target() ? `<button class="twk-btn sm-only${pick.spare ? ' sm-active' : ''}" data-tip="Retirar só o que passa da meta">Só a sobra</button>` : ''}
                         <div class="sm-tools">
                             <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
@@ -452,9 +504,9 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                     <div class="sm-table" style="--cols: ${cols}">
                         <div class="sm-head">
                             <input type="checkbox" class="sm-check sm-check-all"${list.length && list.every(v => chosen.has(v.id)) ? ' checked' : ''}>
-                            <span>Aldeia</span><span>Jogador</span>
-                            ${columns.map(u => `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`).join('')}
-                            ${travelling ? '<span class="sm-num">A caminho</span>' : ''}<span class="sm-num">População</span><span class="sm-num" data-tip="Tropa além da meta que dá para tirar">Sobra</span><span></span>
+                            <span>Aldeia</span>${header('player', 'Jogador')}
+                            ${columns.map(u => header(`unit:${u.i}`, `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`, ' sm-end')).join('')}
+                            ${travelling ? header('coming', 'A caminho', ' sm-end') : ''}${header('pop', 'População', ' sm-end')}${header('extra', '<span data-tip="Tropa além da meta que dá para tirar">Sobra</span>', ' sm-end')}<span></span>
                         </div>
                         <div class="sm-body">
                             ${list.map(v => `<div class="sm-row${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
@@ -464,7 +516,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                                 ${columns.map(u => cell(v.troops[u.i])).join('')}
                                 ${travelling ? cell(pop(arriving(v))) : ''}
                                 <span class="sm-num sm-pop">${TWK.format(pop(v.troops))}</span>
-                                ${extra(v) ? `<span class="sm-num sm-extra" data-tip="${leftover(v)}">${TWK.format(extra(v))}</span>` : cell(0)}
+                                ${surplus(v) ? `<span class="sm-num sm-extra" data-tip="${leftover(v)}">${TWK.format(spareShown(v))}</span>` : cell(0)}
                                 <button class="sm-del" data-tip="Remover apoio">${TWK.ICON.close}</button>
                             </div>`).join('')}
                         </div>
@@ -585,14 +637,20 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const $form = (await TWK.doc(TWK.url(`info_village&id=${id}`))).find('#withdraw_selected_units_village_info');
         const body = { village_id: id, h: game_data.csrf };
         const removed = {};
+        const sparing = pick.spare && !!target();
+        const limit = sparing ? Object.fromEntries(spare({ ...data.villages[id], id }).map((n, i) => [data.units[i].unit, n])) : null;
+        const allowed = unit => sparing ? limit[unit] > 0 : !pick.off.has(unit);
         $form.find('input.unit-selection').each((_, el) => {
-            const wanted = !pick.off.has(el.name.replace('checkbox_', ''));
+            const wanted = allowed(el.name.replace('checkbox_', ''));
             if (wanted) body[el.name] = 'on';
         });
         $form.find('td[data-away-id][data-unit-count]').each((_, td) => {
-            const count = Math.floor(+td.getAttribute('data-unit-count') * pick.percent / 100);
-            const wanted = count && !pick.off.has(td.id);
+            const available = +td.getAttribute('data-unit-count');
+            const share = Math.floor(available * pick.percent / 100);
+            const count = sparing ? Math.min(available, limit[td.id] || 0) : share;
+            const wanted = count && allowed(td.id);
             if (!wanted) return;
+            if (sparing) limit[td.id] -= count;
             body[`withdraw_unit[${td.getAttribute('data-away-id')}][units][${td.id}]`] = count;
             removed[td.id] = (removed[td.id] || 0) + count;
         });
@@ -632,6 +690,19 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     $panel.on('click', '.sm-row', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
     $panel.on('click', '.sm-coming', travel);
+    $panel.on('click', '.sm-only', e => {
+        pick.spare = !pick.spare;
+        $(e.currentTarget).toggleClass('sm-active', pick.spare);
+        $panel.find('.sm-pick').toggleClass('sm-sparing', pick.spare);
+    });
+    $panel.on('click', '.sm-sort', e => {
+        const key = $(e.currentTarget).data('sort');
+        const first = ASCENDING.includes(key) ? 1 : -1;
+        const same = view.sort?.key === key;
+        const reset = same && view.sort.dir !== first;
+        view.sort = reset ? null : { key, dir: same ? -first : first };
+        render();
+    });
     $panel.on('click', '.sm-remove', () => remove([...chosen]));
     $panel.on('click', '.sm-row .sm-check', e => {
         e.stopPropagation();
