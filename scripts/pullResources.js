@@ -157,7 +157,6 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             else show();
             $send.prop('disabled', empty);
         } catch (error) {
-            console.error(error);
             status(`Não foi possível calcular: ${TWK.escape(error?.message || error?.statusText || 'erro desconhecido')}`);
         } finally {
             $calc.prop('disabled', false);
@@ -172,9 +171,12 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         });
         body.append('h', game_data.csrf);
         const json = await $.post(at(`market&ajaxaction=call&h=${game_data.csrf}`), body.toString(), null, 'json');
-        if (json.error) throw new Error([].concat(json.error).join(' '));
         const answer = json.response ?? json;
-        return new Set((answer.transport_info || []).map(t => String(t.village_id)));
+        const errors = [].concat(json.error ?? answer.error ?? []);
+        const sent = new Set((answer.transport_info || []).map(t => String(t.village_id)));
+        const refused = !sent.size && errors.length;
+        if (refused) throw new Error(errors.join(' '));
+        return { sent, errors };
     };
 
     const mark = (i, icon, kind, tip = '') => $result.find(`.pr-row[data-i="${i}"] .pr-state`).html(icon).attr({ class: `pr-state ${kind}`, 'data-tip': tip || null });
@@ -184,27 +186,32 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         $calc.add($send).add($coord).prop('disabled', true);
         let done = 0;
         let failed = 0;
+        const reasons = new Set();
         const rows = plan.map((p, i) => ({ p, i }));
         for (let start = 0; start < rows.length && sending; start += BATCH) {
             const chunk = rows.slice(start, start + BATCH);
             chunk.forEach(({ i }) => mark(i, '<span class="twk-spin" style="width: 11px; height: 11px"></span>', ''));
             try {
-                const sent = await ask(chunk.map(({ p }) => p));
+                const { sent, errors } = await ask(chunk.map(({ p }) => p));
+                const reason = errors.join(' ') || 'O jogo não enviou desta aldeia';
                 chunk.forEach(({ p, i }) => {
                     const ok = sent.has(p.id);
                     if (ok) done++;
                     else failed++;
-                    mark(i, ok ? DONE : TWK.ICON.close, ok ? 'pr-ok' : 'pr-fail', ok ? '' : 'O jogo não enviou desta aldeia');
+                    if (!ok) reasons.add(reason);
+                    mark(i, ok ? DONE : TWK.ICON.close, ok ? 'pr-ok' : 'pr-fail', ok ? '' : reason);
                 });
             } catch (error) {
-                chunk.forEach(({ i }) => mark(i, TWK.ICON.close, 'pr-fail', error.message || 'Erro ao pedir'));
+                const reason = error.message || 'Erro ao pedir';
+                reasons.add(reason);
+                chunk.forEach(({ i }) => mark(i, TWK.ICON.close, 'pr-fail', reason));
                 failed += chunk.length;
             }
         }
         sending = false;
         $calc.add($coord).prop('disabled', false);
         if (done) UI.SuccessMessage(`Recursos pedidos de ${TWK.plural(done, 'aldeia', 'aldeias')}`);
-        if (failed) UI.ErrorMessage(`${TWK.plural(failed, 'aldeia falhou', 'aldeias falharam')}, passe o mouse no ✕ para ver o motivo`);
+        if (failed) UI.ErrorMessage(`${TWK.plural(failed, 'aldeia falhou', 'aldeias falharam')}: ${[...reasons].join(' / ')}`, 15000);
     };
 
     $calc.on('click', calculate);
