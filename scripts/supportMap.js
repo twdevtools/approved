@@ -13,6 +13,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         { min: 0, color: '#ff453a', icon: '🔴' },
     ];
     const PATH = 'overview_villages&mode=units&type=away_detail&filter_villages=1&group=0';
+    const COMMANDS = 'overview_villages&mode=commands&type=support&group=0';
     const RX_COORD = /\((\d+)\|(\d+)\)\s*\S*\s*$/;
     const POP = { spear: 1, sword: 1, axe: 1, archer: 1, spy: 2, light: 4, marcher: 5, heavy: 4, ram: 5, catapult: 8, knight: 10, snob: 100 };
     const WIDE = 1100;
@@ -219,7 +220,59 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         render();
     };
 
+    const transit = ($doc, index, coming) => {
+        const order = $doc.find('#commands_table th img[src*="/unit/unit_"]').get().map(img => img.getAttribute('src').match(/unit_(\w+)\./)[1]);
+        $doc.find('#commands_table .own_command[data-command-type="support"]').each((_, el) => {
+            const $row = $(el).closest('tr');
+            const coord = $.trim($row.find('.quickedit-label').first().text()).match(RX_COORD);
+            const id = coord && index.get(`${coord[1]}|${coord[2]}`);
+            if (!id) return;
+            const counts = $row.find('td.unit-item').get().map(td => +td.textContent || 0);
+            const troops = coming[id] ??= data.units.map(() => 0);
+            order.forEach((unit, k) => {
+                const i = data.units.findIndex(u => u.unit === unit);
+                if (i >= 0) troops[i] += counts[k] || 0;
+            });
+        });
+    };
+
+    const travel = async () => {
+        reading = true;
+        $panel.find('.sm-coming, .sm-refresh').prop('disabled', true);
+        const index = new Map(Object.entries(data.villages).map(([id, v]) => [`${v.x}|${v.y}`, id]));
+        const coming = {};
+        try {
+            busy('Lendo os apoios a caminho...');
+            const first = await TWK.doc(TWK.url(`${COMMANDS}&page=0`));
+            const total = pageCount(first);
+            transit(first, index, coming);
+            for (let page = 1; page < total && reading; page++) {
+                busy(`Lendo os apoios a caminho, página ${page + 1} de ${total}...`, page / total);
+                transit(await TWK.doc(TWK.url(`${COMMANDS}&page=${page}`)), index, coming);
+            }
+        } catch {
+            reading = false;
+            UI.ErrorMessage('Não foi possível ler os apoios a caminho');
+        }
+        const finished = reading;
+        reading = false;
+        $refresh.prop('disabled', false);
+        if (finished) {
+            data.coming = coming;
+            TWK.store.set(KEY, data);
+        }
+        render();
+        TWMap.reload();
+    };
+
     const pop = troops => troops.reduce((total, n, i) => total + n * (POP[data.units[i].unit] || 0), 0);
+
+    const arriving = v => data.coming?.[v.id] || v.troops.map(() => 0);
+
+    const stock = v => {
+        const incoming = arriving(v);
+        return v.troops.map((n, i) => n + incoming[i]);
+    };
 
     const tag = id => data.allies[id] ? `[${TWK.escape(data.allies[id])}]` : 'Sem tribo';
 
@@ -248,14 +301,14 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return list.length ? Math.min(...list) : -1;
     };
 
-    const breakdown = v => shares(v.troops)
+    const breakdown = v => shares(stock(v))
         .map((share, k) => share === null ? '' : `${KINDS[k]} ${Math.floor(share * 100)}%`)
         .filter(Boolean)
         .join(' · ');
 
     const spare = v => {
         const need = required();
-        const have = power(v.troops);
+        const have = power(stock(v));
         const left = [...v.troops];
         const taken = v.troops.map(() => 0);
         const room = i => {
@@ -344,7 +397,8 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const allies = [...new Set(all.map(v => v.ally))].sort((a, b) => tag(a).localeCompare(tag(b)));
         const total = list.reduce((sum, v) => sum + pop(v.troops), 0);
         const scroll = $content.find('.sm-players').scrollTop();
-        const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr)) 96px 96px 28px`;
+        const travelling = !!data.coming;
+        const cols = `16px 68px minmax(90px, 1fr) repeat(${columns.length}, minmax(0, 1fr))${travelling ? ' 96px' : ''} 96px 96px 28px`;
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
@@ -380,6 +434,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="sm-tools">
                             <button class="twk-btn sm-tool sm-mapmode${picking ? ' sm-active' : ''}" data-tip="Selecionar no mapa">${TWK.ICON.target}</button>
                             <button class="twk-btn sm-tool sm-copy" data-tip="Copiar coordenadas">${TWK.ICON.copy}</button>
+                            <button class="twk-btn sm-tool sm-coming${travelling ? ' sm-goalset' : ''}" data-tip="${travelling ? 'Atualizar os apoios a caminho' : 'Somar os apoios a caminho'}">${TWK.ICON.plus}</button>
                             <button class="twk-btn sm-tool sm-goalbtn${target() ? ' sm-goalset' : ''}${goalOpen ? ' sm-active' : ''}" data-tip="Meta por aldeia">${TWK.ICON.chart}</button>
                             <button class="twk-btn sm-remove"${chosen.size ? '' : ' disabled'}>${removal()}</button>
                         </div>
@@ -393,7 +448,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                             <input type="checkbox" class="sm-check sm-check-all"${list.length && list.every(v => chosen.has(v.id)) ? ' checked' : ''}>
                             <span>Aldeia</span><span>Jogador</span>
                             ${columns.map(u => `<img src="${u.src}" alt="${u.unit}" data-tip="${u.unit}">`).join('')}
-                            <span class="sm-num">População</span><span class="sm-num" data-tip="Tropa além da meta que dá para tirar">Sobra</span><span></span>
+                            ${travelling ? '<span class="sm-num">A caminho</span>' : ''}<span class="sm-num">População</span><span class="sm-num" data-tip="Tropa além da meta que dá para tirar">Sobra</span><span></span>
                         </div>
                         <div class="sm-body">
                             ${list.map(v => `<div class="sm-row${chosen.has(v.id) ? ' sm-chosen' : ''}" data-id="${v.id}" data-x="${v.x}" data-y="${v.y}">
@@ -401,6 +456,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                                 <b class="twk-mono"${target() ? ` data-tip="${breakdown(v)}"` : ''}>${v.x}|${v.y}</b>
                                 <span class="sm-owner">${TWK.escape(data.players[v.player] || '')}</span>
                                 ${columns.map(u => cell(v.troops[u.i])).join('')}
+                                ${travelling ? cell(pop(arriving(v))) : ''}
                                 <span class="sm-num sm-pop">${TWK.format(pop(v.troops))}</span>
                                 ${extra(v) ? `<span class="sm-num sm-extra" data-tip="${leftover(v)}">${TWK.format(extra(v))}</span>` : cell(0)}
                                 <button class="sm-del" data-tip="Remover apoio">${TWK.ICON.close}</button>
@@ -409,7 +465,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                         <div class="sm-foot">
                             <span></span><span>Total</span><span></span>
                             ${columns.map(u => cell(u.total)).join('')}
-                            <span class="sm-num sm-pop">${TWK.format(total)}</span>${cell(list.reduce((sum, v) => sum + extra(v), 0))}<span></span>
+                            ${travelling ? cell(list.reduce((sum, v) => sum + pop(arriving(v)), 0)) : ''}<span class="sm-num sm-pop">${TWK.format(total)}</span>${cell(list.reduce((sum, v) => sum + extra(v), 0))}<span></span>
                         </div>
                     </div>
                 </section>
@@ -420,7 +476,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const tier = id => {
         const village = data.villages[id];
-        const ratio = village && target() ? strength(village.troops) : -1;
+        const ratio = village && target() ? strength(stock({ ...village, id })) : -1;
         return TIERS.find(t => ratio >= t.min)?.color || BASE;
     };
 
@@ -569,6 +625,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     $panel.on('click', '.sm-player', e => select('player', String($(e.currentTarget).data('player'))));
     $panel.on('click', '.sm-row', e => TWMap.focusUserSpecified($(e.currentTarget).data('x'), $(e.currentTarget).data('y')));
     $panel.on('click', '.sm-copy', copy);
+    $panel.on('click', '.sm-coming', travel);
     $panel.on('click', '.sm-remove', () => remove([...chosen]));
     $panel.on('click', '.sm-row .sm-check', e => {
         e.stopPropagation();
