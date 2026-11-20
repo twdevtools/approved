@@ -93,13 +93,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         return { id: el.dataset.village, x: +coord[1], y: +coord[2], time: $.trim($row.children('td').eq(1).text()), capacity: +el.dataset.capacity || 0, ...stock };
     });
 
-    const sources = async () => {
+    const sources = async (progress = status) => {
         const first = await TWK.doc(at(`${CALL}&page=0`));
         const numbers = first.find('.paged-nav-item').get().map(a => +((a.getAttribute('href') || '').match(/page=(\d+)/) || [])[1]).filter(n => !isNaN(n));
         const total = Math.max(0, ...numbers) + 1;
         const list = parse(first);
         for (let page = 1; page < total; page++) {
-            status(`Lendo as aldeias, página ${page + 1} de ${total}...`);
+            progress(`Lendo as aldeias, página ${page + 1} de ${total}...`);
             list.push(...parse(await TWK.doc(at(`${CALL}&page=${page}`))));
         }
         return list;
@@ -113,19 +113,31 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         <span class="pr-state"></span>
     </div>`;
 
-    const show = () => {
-        $panel.css('width', WIDE);
+    const foot = () => {
         const sent = Object.fromEntries(RESOURCES.map(r => [r, plan.reduce((sum, p) => sum + p.send[r], 0)]));
         const coins = Math.floor(plan.reduce((sum, p) => sum + p.coins, 0));
+        return `<div class="pr-row pr-foot"><span>Total</span><span></span>${RESOURCES.map(r => `<span class="pr-num">${TWK.format(sent[r])}</span>`).join('')}<span class="pr-num">${TWK.format(coins)}</span><span></span></div>`;
+    };
+
+    const show = () => {
+        $panel.css('width', WIDE);
         $result.html(`
             <div class="pr-table">
                 <div class="pr-row pr-head"><span>Aldeia</span><span class="pr-num">Tempo</span>${RESOURCES.map(r => `<span class="pr-num"><span class="icon header ${r}"></span></span>`).join('')}<span class="pr-num">Moedas</span><span></span></div>
                 <div class="pr-body">${plan.map(row).join('')}</div>
-                <div class="pr-row pr-foot"><span>Total</span><span></span>${RESOURCES.map(r => `<span class="pr-num">${TWK.format(sent[r])}</span>`).join('')}<span class="pr-num">${TWK.format(coins)}</span><span></span></div>
+                ${foot()}
             </div>
         `);
         $send.html(`${GOLD}Pedir de ${TWK.plural(plan.length, 'aldeia', 'aldeias')}`);
     };
+
+    const mint = v => {
+        const bundle = RESOURCES.reduce((sum, r) => sum + cost[r], 0);
+        const coins = Math.max(0, Math.min(v.capacity / bundle, ...RESOURCES.map(r => v[r] / cost[r])));
+        return { ...v, coins, send: Object.fromEntries(RESOURCES.map(r => [r, Math.floor(coins * cost[r])])) };
+    };
+
+    const worth = p => RESOURCES.reduce((sum, r) => sum + p.send[r], 0) >= LOAD;
 
     const calculate = async () => {
         const coord = $.trim($coord.val());
@@ -147,11 +159,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             if (!cost) return status('Essa aldeia não tem academia para cunhar moedas');
             status('Lendo as aldeias...');
             villages = await sources();
-            const bundle = RESOURCES.reduce((sum, r) => sum + cost[r], 0);
-            plan = villages.map(v => {
-                const coins = Math.max(0, Math.min(v.capacity / bundle, ...RESOURCES.map(r => v[r] / cost[r])));
-                return { ...v, coins, send: Object.fromEntries(RESOURCES.map(r => [r, Math.floor(coins * cost[r])])) };
-            }).filter(p => RESOURCES.reduce((sum, r) => sum + p.send[r], 0) >= LOAD);
+            plan = villages.map(mint).filter(worth);
             $info.html(`<b>${TWK.escape(target.name)}</b> (${target.x}|${target.y}) · Moeda: <b>${RESOURCES.map(r => TWK.format(cost[r])).join(' / ')}</b>`);
             const empty = !plan.length;
             if (empty) status('Nenhuma aldeia tem 1.000 recursos ou mais para enviar');
@@ -182,20 +190,34 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     const mark = (i, icon, kind, tip = '') => $result.find(`.pr-row[data-i="${i}"] .pr-state`).html(icon).attr({ class: `pr-state ${kind}`, 'data-tip': tip || null });
 
+    const refresh = async from => {
+        const fresh = new Map((await sources(() => {})).map(v => [v.id, v]));
+        plan.slice(from).forEach((p, n) => {
+            const i = from + n;
+            const v = fresh.get(p.id);
+            plan[i] = v ? mint(v) : { ...p, coins: 0, send: Object.fromEntries(RESOURCES.map(r => [r, 0])) };
+            $result.find(`.pr-row[data-i="${i}"]`).replaceWith(row(plan[i], i));
+        });
+        $result.find('.pr-foot').replaceWith(foot());
+    };
+
     const send = async () => {
         sending = true;
         $calc.add($send).add($coord).prop('disabled', true);
         let done = 0;
         let failed = 0;
+        let retried = false;
         const reasons = new Set();
-        const rows = plan.map((p, i) => ({ p, i }));
-        for (let start = 0; start < rows.length && sending; start += BATCH) {
-            const chunk = rows.slice(start, start + BATCH);
-            chunk.forEach(({ i }) => mark(i, '<span class="twk-spin" style="width: 11px; height: 11px"></span>', ''));
+        for (let start = 0; start < plan.length && sending; start += BATCH) {
+            const chunk = plan.slice(start, start + BATCH).map((p, n) => ({ p, i: start + n }));
+            const ready = chunk.filter(({ p }) => worth(p));
+            chunk.filter(({ p }) => !worth(p)).forEach(({ i }) => mark(i, '–', '', 'Ficou com menos de 1.000 recursos'));
+            if (!ready.length) continue;
+            ready.forEach(({ i }) => mark(i, '<span class="twk-spin" style="width: 11px; height: 11px"></span>', ''));
             try {
-                const { sent, errors } = await ask(chunk.map(({ p }) => p));
+                const { sent, errors } = await ask(ready.map(({ p }) => p));
                 const reason = errors.join(' ') || 'O jogo não enviou desta aldeia';
-                chunk.forEach(({ p, i }) => {
+                ready.forEach(({ p, i }) => {
                     const ok = sent.has(p.id);
                     if (ok) done++;
                     else failed++;
@@ -203,10 +225,17 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
                     mark(i, ok ? DONE : TWK.ICON.close, ok ? 'pr-ok' : 'pr-fail', ok ? '' : reason);
                 });
             } catch (error) {
+                const again = !retried;
+                retried = true;
+                const renewed = again && await refresh(start).then(() => true, () => false);
+                if (renewed) {
+                    start -= BATCH;
+                    continue;
+                }
                 const reason = error.message || 'Erro ao pedir';
                 reasons.add(reason);
-                chunk.forEach(({ i }) => mark(i, TWK.ICON.close, 'pr-fail', reason));
-                failed += chunk.length;
+                ready.forEach(({ i }) => mark(i, TWK.ICON.close, 'pr-fail', reason));
+                failed += ready.length;
             }
         }
         sending = false;
