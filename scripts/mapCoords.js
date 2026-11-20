@@ -3,7 +3,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     if (!page) return TWK.redirect('map', 'Redirecionando para o mapa...');
 
     const KEY = `twMapCoords_${game_data.world}`;
-    const COLOR = '#0a84ff';
+    const COLOR = '#ffffff';
     const SEPARATORS = { line: '\n', space: ' ', comma: ',' };
 
     const picked = TWK.store.get(KEY, []);
@@ -17,6 +17,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         onClose: () => {
             TWMap.mapHandler.onClick = TWMap.mapHandler.mcClick;
             TWMap.mapHandler.spawnSector = TWMap.mapHandler.mcSpawn;
+            TWMap.minimapHandler.loadSector = TWMap.minimapHandler.mcLoad;
             TWMap.reload();
         },
         css: `
@@ -67,12 +68,13 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     const mark = sector => {
         const span = sector._map.sectorSize;
         const [width, height] = sector._map.scale;
+        const mini = sector._map === TWMap.minimap;
+        const look = mini ? { background: COLOR, zIndex: 10 } : { border: `3px solid ${COLOR}`, outline: '1px solid #000', background: `${COLOR}73`, zIndex: 5 };
         picked.map(coord => coord.split('|').map(Number))
             .filter(([x, y]) => x >= sector.x && x < sector.x + span && y >= sector.y && y < sector.y + span)
             .forEach(([x, y]) => {
                 const $el = $('<div>').css({
-                    position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', zIndex: 5,
-                    width, height, border: `3px solid ${COLOR}`, outline: '1px solid #000', background: `${COLOR}73`,
+                    position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', width, height, ...look,
                 });
                 sector.appendElement($el[0], x - sector.x, y - sector.y);
             });
@@ -80,6 +82,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
 
     TWMap.mapHandler.mcClick ??= TWMap.mapHandler.onClick;
     TWMap.mapHandler.mcSpawn ??= TWMap.mapHandler.spawnSector;
+    TWMap.minimapHandler.mcLoad ??= TWMap.minimapHandler.loadSector;
     TWMap.mapHandler.onClick = function (x, y, event) {
         const village = TWMap.villages[x * 1000 + y];
         if (!village) return TWMap.mapHandler.mcClick.call(this, x, y, event);
@@ -88,6 +91,10 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
     };
     TWMap.mapHandler.spawnSector = function (info, sector) {
         TWMap.mapHandler.mcSpawn.call(this, info, sector);
+        mark(sector);
+    };
+    TWMap.minimapHandler.loadSector = function (sector) {
+        TWMap.minimapHandler.mcLoad.call(this, sector);
         mark(sector);
     };
 
