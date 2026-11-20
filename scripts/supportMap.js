@@ -73,7 +73,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
             #sm-panel .sm-goal { position: relative; display: block; width: 110px; }
             #sm-panel .sm-goal img { position: absolute; left: 9px; top: 50%; z-index: 1; width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none; }
             #sm-panel .sm-goal input { padding-left: 32px; }
-            #sm-panel .sm-goalrow small { margin-left: auto; padding-left: 12px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+            #sm-panel .sm-goalrow small { margin-left: auto; padding-left: 16px; color: var(--muted); font-size: 11px; white-space: nowrap; }
             #sm-panel .sm-extra { color: #64d2ff; }
             #sm-panel .sm-row.sm-chosen { background: rgba(10, 132, 255, .1); }
             #sm-panel .sm-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
@@ -440,7 +440,7 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const fixed = [16, 68, 120, 96, 96, 96, 28];
         const units = columns.map(() => `minmax(${UNIT}px, 1fr)`).join(' ');
         const cols = `16px 68px minmax(120px, 1fr) ${units} 96px 96px 96px 28px`;
-        $panel.css('width', FRAME + fixed.reduce((sum, n) => sum + n, 0) + columns.length * UNIT + (fixed.length + columns.length - 1) * GAP);
+        $panel.css('width', Math.max(WIDE, FRAME + fixed.reduce((sum, n) => sum + n, 0) + columns.length * UNIT + (fixed.length + columns.length - 1) * GAP));
         $content.html(`
             <div class="sm-stats">
                 ${stat('Aldeias', TWK.format(list.length))}
