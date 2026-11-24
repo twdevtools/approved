@@ -69,13 +69,14 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         const span = sector._map.sectorSize;
         const [width, height] = sector._map.scale;
         const mini = sector._map === TWMap.minimap;
-        const look = mini ? { border: '1px solid #000', background: COLOR, zIndex: 10 } : { border: `3px solid ${COLOR}`, outline: '1px solid #000', background: `${COLOR}73`, zIndex: 5 };
+        const dot = Math.max(width, height) * 2.4;
+        const look = mini
+            ? { width: dot, height: dot, marginLeft: (width - dot) / 2, marginTop: (height - dot) / 2, borderRadius: '50%', border: '2px solid #000', background: COLOR, zIndex: 10 }
+            : { width, height, border: `3px solid ${COLOR}`, outline: '1px solid #000', background: `${COLOR}73`, zIndex: 5 };
         picked.map(coord => coord.split('|').map(Number))
             .filter(([x, y]) => x >= sector.x && x < sector.x + span && y >= sector.y && y < sector.y + span)
             .forEach(([x, y]) => {
-                const $el = $('<div>').css({
-                    position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', width, height, ...look,
-                });
+                const $el = $('<div>').css({ position: 'absolute', pointerEvents: 'none', boxSizing: 'border-box', ...look });
                 sector.appendElement($el[0], x - sector.x, y - sector.y);
             });
     };
