@@ -311,14 +311,16 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         .join(' · ');
 
     const spare = v => {
+        const troops = stock(v);
         const need = required();
-        const have = power(stock(v));
+        const have = power(troops);
         const left = [...v.troops];
         const taken = v.troops.map(() => 0);
+        const extra = troops.map((n, i) => Math.max(0, n - (goal[data.units[i].unit] || 0)));
         const room = i => {
             const unit = data.units[i].unit;
             const limits = need.map((n, k) => armor(unit, k) ? Math.floor((have[k] - n) / armor(unit, k)) : Infinity);
-            return Math.max(0, Math.min(left[i], ...limits));
+            return Math.max(0, Math.min(left[i], extra[i] - taken[i], ...limits));
         };
         data.units.forEach(() => {
             const best = left.map((_, i) => ({ i, n: room(i) })).reduce((top, c) => c.n * (POP[data.units[c.i].unit] || 0) > top.n * (POP[data.units[top.i].unit] || 0) ? c : top);
