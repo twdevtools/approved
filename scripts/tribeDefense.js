@@ -372,12 +372,15 @@ $.ajax({ url: 'https://cdn.jsdelivr.net/gh/twdevtools/approved@1.2.8/twkit.js', 
         .join(' · ');
 
     const lacking = v => {
+        const troops = stock(v);
         const need = required();
-        const have = power(stock(v));
-        const missing = Math.max(0, ...need.map((n, d) => n ? (n - have[d]) / n : 0));
+        const have = power(troops);
+        const gap = data.units.map((u, i) => u.unit === SCOUT ? 0 : Math.max(0, (settings.goal[u.unit] || 0) - troops[i]));
+        const added = power(gap);
+        const fraction = Math.min(1, Math.max(0, ...need.map((n, d) => added[d] ? (n - have[d]) / added[d] : 0)));
         return guards().map(u => u.unit === SCOUT
-            ? Math.max(0, (settings.goal[SCOUT] || 0) - spies(stock(v)))
-            : Math.ceil((settings.goal[u.unit] || 0) * missing));
+            ? Math.max(0, (settings.goal[SCOUT] || 0) - spies(troops))
+            : Math.ceil(gap[u.i] * fraction));
     };
 
     const short = v => {
